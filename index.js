@@ -2,6 +2,7 @@ require("dotenv").config();
 const sql = require("mssql/msnodesqlv8");
 const express = require("express");
 const app = express();
+const Request = require("tedious").request;
 
 app.use(
   express.urlencoded({
@@ -72,15 +73,14 @@ async function getDBUserAsyncFunction(id) {
   }
 }
 
-async function insertUser() {
+async function insertUser(usNome, usLogin) {
   try {
     const pool = await sql.connect(sqlConfig);
     const result = await pool
       .request()
-      .input("Usuarios_ID", sql.Int, parseInt(id))
-      .query(
-        "SELECT Usuarios_ID, UsNome, UsLogin, UsSenha FROM Usuarios WHERE Usuarios_ID = @Usuarios_ID"
-      );
+      .input("NOME", usNome)
+      .input("LOGIN", usLogin)
+      .query("INSERT INTO Usuarios_ID(UsNome, UsLogin) VALUES(@NOME, @LOGIN)");
 
     console.log(result);
     sql.close();
@@ -110,16 +110,35 @@ app.get("/users", async (req, res) => {
 });
 
 app.post("/", async (req, res) => {
-  const { name, cpf } = req.body;
+  const { name, login } = req.body;
 
   if (!name) {
     res.status(422).json({ error: "O nome é obrigatório" });
     return;
   }
 
-  if (!cpf) {
+  if (!login) {
     res.status(422).json({ error: "O CPF/CNPJ é obrigatório" });
     return;
+  }
+
+  console.log(name + " - " + login);
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const result = await pool
+      .request()
+      .input("NOME", sql.VarChar(50), name)
+      .input("LOGIN", sql.VarChar(50), login)
+      .query("INSERT INTO Usuarios_ID(UsNome, UsLogin) VALUES(@NOME, @LOGIN)");
+
+    console.log(result);
+
+    sql.close();
+
+    res.status(201).json({ result: result, message: "Criado" });
+  } catch (error) {
+    res.status(500).json({ error: error });
   }
 });
 
