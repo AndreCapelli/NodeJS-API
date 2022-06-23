@@ -32,10 +32,14 @@ exports.create = (req, res) => {
 exports.findAll = (req, res) => {
   const usNome = req.query.UsNome;
   var condition = usNome ? { usNome: { [Op.like]: `%${usNome}%` } } : null;
-  Usuario.findAll({ where: condition })
+  Usuario.findAll({
+    where: { UsAtivo: true },
+    attributes: ["Usuarios_ID", "UsNome", "UsLogin", "UsSenha"],
+  })
     .then((data) => {
       if (!data) {
         res.status(204).json({ message: "Nenhum conteudo" });
+        return;
       } else {
         res.status(200).json(data);
       }
@@ -51,10 +55,13 @@ exports.findAll = (req, res) => {
 exports.findOne = (req, res) => {
   const id = req.params.id;
 
-  Usuario.findByPk(id)
+  Usuario.findByPk(id, {
+    attributes: ["Usuarios_ID", "UsNome", "UsLogin", "UsSenha"],
+  })
     .then((data) => {
       if (!data) {
         res.status(204).json({ message: "Nenhum conteudo" });
+        return;
       } else {
         res.status(200).json(data);
       }
@@ -84,6 +91,7 @@ exports.update = (req, res) => {
         res.status(200).json({
           message: "Usuario was updated successfully.",
         });
+        return;
       } else {
         res.status(406).json({
           message: `Cannot update Usuario with id=${id}. Maybe Usuario was not found or req.body is empty!`,

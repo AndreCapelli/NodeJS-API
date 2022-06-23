@@ -1,6 +1,6 @@
 module.exports = (app) => {
   const usuario = require("../controllers/usuario.controller.js");
-  var router = require("express").Router();
+  const router = require("express").Router();
   // Create a new Usuario
   router.post("/", usuario.create);
   // Retrieve all usuario

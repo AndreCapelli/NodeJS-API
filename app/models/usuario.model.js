@@ -17,6 +17,9 @@ module.exports = (sequelize, Sequelize) => {
       UsSenha: {
         type: Sequelize.STRING,
       },
+      UsAtivo: {
+        type: Sequelize.BOOLEAN,
+      },
     },
     {
       // don't add the timestamp attributes (updatedAt, createdAt)

@@ -16,26 +16,6 @@ module.exports = {
   },
 };
 
-// const sql = require("mssql/msnodesqlv8");
-
-// const sqlConfig = {
-//   user: process.env.DB_USER,
-//   password: process.env.DB_PASSWORD,
-//   database: process.env.DB_NAME,
-//   server: process.env.DB_SERVER,
-//   port: process.env.DB_PORT,
-//   driver: "msnodesqlv8",
-//   pool: {
-//     max: 10,
-//     min: 0,
-//     idleTimeoutMillis: 30000,
-//   },
-//   connectionTimeout: 150000,
-//   options: {
-//     enableArithAbort: true,
-//   },
-// };
-
-// const pool = sql.connect(sqlConfig);
-
-// module.exports = pool;
+/*Config padrão da conexão com o SQL Server
+Se não encontrar as variáveis, criar arquivo .env
+com os mesmos nomes e suas respectivas configurações */
