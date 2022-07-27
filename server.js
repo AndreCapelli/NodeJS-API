@@ -33,6 +33,9 @@ app.get("/", (req, res) => {
 para validar sua endpoint na estrutura */
 require("./app/routes/tutorial.route")(app);
 require("./app/routes/usuario.route")(app);
+require("./app/routes/pessoa.route")(app);
+require("./app/routes/telefone.route")(app);
+
 // set port, listen for requests
 const PORT = 3000;
 app.listen(PORT, () => {

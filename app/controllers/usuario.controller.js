@@ -72,6 +72,48 @@ exports.findOne = (req, res) => {
       });
     });
 };
+
+//Faz a comparação do Login
+exports.login = (req, res) => {
+  async function RetornaJsonLogin() {
+    const loginRes = await Usuario.findOne({
+      where: {
+        UsLogin: user,
+        UsSenha: pass,
+      },
+      attributes: ["Usuarios_ID", "UsNome"],
+    })
+      .then((data) => {
+        if (!data) {
+          res.status(204).json({
+            message: `Usuário\ Senha inválidos`,
+          });
+        } else {
+          res.status(200).json(data);
+        }
+      })
+      .catch((err) => {
+        res
+          .status(500)
+          .send({ message: err.message || "Erro ao validar credenciais" });
+      });
+
+    return loginRes;
+  }
+
+  const user = req.params.User;
+  const pass = req.params.Pass;
+
+  if (!user || !pass) {
+    res.status(406).json({
+      message: "Não é possível fazer o login",
+    });
+    return;
+  } else {
+    RetornaJsonLogin();
+  }
+};
+
 // Update a Usuario by the id in the request
 exports.update = (req, res) => {
   const id = req.params.id;
@@ -79,7 +121,7 @@ exports.update = (req, res) => {
   if (!id) {
     res
       .status(406)
-      .json({ message: "ID necessário para concluir essa solicitação" });
+      .send({ message: "ID necessário para concluir essa solicitação" });
     return;
   }
 
@@ -93,13 +135,13 @@ exports.update = (req, res) => {
         });
         return;
       } else {
-        res.status(406).json({
+        res.status(406).send({
           message: `Cannot update Usuario with id=${id}. Maybe Usuario was not found or req.body is empty!`,
         });
       }
     })
     .catch((err) => {
-      res.status(500).json({
+      res.status(500).send({
         message: "Error updating Usuario with id=" + id,
       });
     });
@@ -111,7 +153,7 @@ exports.delete = (req, res) => {
   if (!id) {
     res
       .status(406)
-      .json({ message: "ID necessário para concluir essa solicitação" });
+      .send({ message: "ID necessário para concluir essa solicitação" });
     return;
   }
 
@@ -124,7 +166,7 @@ exports.delete = (req, res) => {
           message: "Usuario was deleted successfully.",
         });
       } else {
-        res.status(406).json({
+        res.status(406).send({
           message: `Cannot delete Usuario with id=${id}. Maybe Usuario was not found or req.body is empty!`,
         });
       }

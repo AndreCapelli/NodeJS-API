@@ -16,6 +16,9 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 db.tutorials = require("./tutorial.model.js")(sequelize, Sequelize);
 db.usuarios = require("./usuario.model.js")(sequelize, Sequelize);
+db.pessoas = require("./pessoa.model.js")(sequelize, Sequelize);
+db.telefones = require("./telefone.model.js")(sequelize, Sequelize);
+
 module.exports = db;
 
 /*Quando necessário criar novo model, necessário
