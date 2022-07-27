@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // simple route
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome" });
+  res.json({ message: "Welcome - API MaxMobile" });
 });
 
 /* Após a criação de uma nova rota, declarar abaixo
