@@ -23,9 +23,9 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "msnodesqlv8": "^2.5.0",
-    "mssql": "^4.1.0",
+    "mssql": "^8.1.2",
     "nodemon": "^2.0.16",
     "sequelize": "^6.21.0",
-    "tedious": "^11.4.0"
+    "tedious": "^14.6.0"
   }
 }
