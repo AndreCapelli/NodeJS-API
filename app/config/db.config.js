@@ -18,4 +18,10 @@ module.exports = {
 
 /*Config padrão da conexão com o SQL Server
 Se não encontrar as variáveis, criar arquivo .env
-com os mesmos nomes e suas respectivas configurações */
+com os mesmos nomes e suas respectivas configurações 
+
+
+"mssql": "^8.1.2",
+"tedious": "^14.6.0",
+
+*/
