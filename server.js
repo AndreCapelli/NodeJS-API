@@ -39,7 +39,7 @@ require("./app/routes/pessoa.route")(app);
 require("./app/routes/telefone.route")(app);
 
 // set port, listen for requests
-const PORT = 21161;
+const PORT = 21000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
