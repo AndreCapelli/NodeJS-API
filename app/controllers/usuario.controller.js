@@ -85,7 +85,7 @@ exports.login = (req, res) => {
     })
       .then((data) => {
         if (!data) {
-          res.status(204).json({
+          res.status(406).json({
             message: `Usuário\ Senha inválidos`,
           });
         } else {

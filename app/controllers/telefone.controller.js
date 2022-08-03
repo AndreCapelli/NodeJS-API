@@ -13,7 +13,7 @@ exports.create = (req, res) => {
   if (!req.body.PesPessoasID) {
     res
       .status(406)
-      .send({ message: "Telefone sem Pessoa, informa o ID da Pessoa!" });
+      .send({ message: "Telefone sem Pessoa, informe o ID da Pessoa!" });
     return;
   }
 

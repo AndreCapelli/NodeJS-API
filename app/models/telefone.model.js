@@ -39,6 +39,8 @@ module.exports = (sequelize, Sequelize) => {
 
       // If don't want updatedAt
       updatedAt: false,
+
+      hasTrigger: true,
     }
   );
 
