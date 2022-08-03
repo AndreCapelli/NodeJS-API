@@ -19,11 +19,11 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING,
       },
       PesTelefone: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.STRING,
         allowNull: false,
       },
       PesEmail: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.STRING,
       },
       PesDataCad: {
         type: Sequelize.STRING,

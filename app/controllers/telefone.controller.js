@@ -10,36 +10,49 @@ exports.create = (req, res) => {
     return;
   }
 
-  if (!req.body.PesPessoasID) {
-    res
-      .status(406)
-      .send({ message: "Telefone sem Pessoa, informe o ID da Pessoa!" });
-    return;
+  const arrayContatos = req.body.length;
+
+  if (arrayContatos > 1) {
+    Telefone.bulkCreate(req.body, { individualHooks: true })
+      .then((data) => {
+        if (!data) {
+          res.status(406).send({
+            message:
+              "Problema ao fazer o cadastro de Telefone, tente mais tarde!",
+          });
+          return;
+        } else {
+          res.status(201).json(data);
+        }
+      })
+      .catch((err) => {
+        res.status(500).send({ message: err.message || "Algo errado" });
+      });
+  } else {
+    const contato = {
+      PesPessoasID: req.body.PesPessoasID,
+      PesContato: req.body.PesContato,
+      PesDDD: req.body.PesDDD,
+      PesTelefone: req.body.PesTelefone,
+      PesEmail: req.body.PesEmail,
+    };
+
+    Telefone.create(contato)
+      .then((data) => {
+        if (!data) {
+          res.status(406).send({
+            message:
+              "Problema ao fazer o cadastro de Telefone, tente mais tarde!",
+          });
+          return;
+        } else {
+          res.status(201).json(data);
+        }
+      })
+      .catch((err) => {
+        res.status(500).send({ message: err.message || "Algo errado" });
+      });
   }
-
-  const contato = {
-    PesPessoasID: req.body.PesPessoasID,
-    PesContato: req.body.PesContato,
-    PesDDD: req.body.PesDDD,
-    PesTelefone: req.body.PesTelefone,
-    PesEmail: req.body.PesEmail,
-  };
-
-  Telefone.create(contato)
-    .then((data) => {
-      if (!data) {
-        res.status(406).send({
-          message:
-            "Problema ao fazer o cadastro de Telefone, tente mais tarde!",
-        });
-        return;
-      } else {
-        res.status(201).json(data);
-      }
-    })
-    .catch((err) => {
-      res.status(500).send({ message: err.message || "Algo errado" });
-    });
 };
 
 exports.findOne = (req, res) => {
