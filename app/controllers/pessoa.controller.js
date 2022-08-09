@@ -1,7 +1,16 @@
 const db = require("../models");
 const Pessoa = db.pessoas;
+const Telefone = db.telefones;
 const Op = db.Sequelize.Op;
 
+/**
+ * Exports. para sempre "exportar" o resultado do que acontecer
+ * A próxima palavra é sempre o que foi declarado nas routas, ou seja, é sua função que é chamada
+ * (req, res) respectivamente é o requerimento e a response da API
+ *
+ * Os métodos chamados após a const Pessoa são nativos do Sequelize, na documentação terá a explicação de todos
+ * o resto é apenas JS
+ */
 exports.create = (req, res) => {
   if (!req.body.PesTipoPessoa) {
     res.status(406).json({ message: "Tipo de Pessoa não pode ser vazio" });
@@ -12,9 +21,9 @@ exports.create = (req, res) => {
 
   if (req.body.PesTipoPessoa == "F") {
     pessoa = {
-      FPesNome: req.body.FPesNome,
-      FPesApelido: req.body.FPesApelido,
-      FPesCPF: req.body.FPesCPF,
+      FPesNome: req.body.PesNome,
+      FPesApelido: req.body.PesApelido,
+      FPesCPF: req.body.PesDocumento,
       PesTipoPessoa: req.body.PesTipoPessoa,
       PesEndereco: req.body.PesEndereco,
       PesComplementoEndereco: req.body.PesComplementoEndereco,
@@ -27,9 +36,9 @@ exports.create = (req, res) => {
     };
   } else if (req.body.PesTipoPessoa == "J") {
     pessoa = {
-      JPesRazaoSocial: req.body.JPesRazaoSocial,
-      JPesNomeFantasia: req.body.JPesNomeFantasia,
-      JPesCNPJ: req.body.JPesCNPJ,
+      JPesRazaoSocial: req.body.PesNome,
+      JPesNomeFantasia: req.body.PesApelido,
+      JPesCNPJ: req.body.PesDocumento,
       PesTipoPessoa: req.body.PesTipoPessoa,
       PesEndereco: req.body.PesEndereco,
       PesComplementoEndereco: req.body.PesComplementoEndereco,
@@ -48,9 +57,89 @@ exports.create = (req, res) => {
     return;
   }
 
-  Pessoa.create(pessoa)
-    .then((data) => {
-      res.status(201).json(data);
+  Pessoa.findOrCreate({
+    where: {
+      [Op.or]: [
+        { JPesCNPJ: req.body.PesDocumento },
+        { FPesCPF: req.body.PesDocumento },
+      ],
+    },
+    defaults: pessoa,
+  })
+    .then(([data, created]) => {
+      if (!created) {
+        res
+          .status(208)
+          .json({ message: "Pessoa com esse documento já existe!" });
+        return;
+      }
+
+      const PessoasID = data.Pessoas_ID;
+      const arrayContatos = req.body.contatosCadastro.length;
+
+      if (arrayContatos > 1) {
+        let contatos = req.body.contatosCadastro.map(function (ct) {
+          var ddd = ct.PesTelefone.substring(0, 2);
+          var telefone = ct.PesTelefone.substring(2);
+
+          return {
+            PesPessoasID: PessoasID,
+            PesContato: ct.PesContato,
+            PesDDD: ddd,
+            PesTelefone: telefone,
+            PesEmail: ct.PesEmail,
+          };
+        });
+
+        Telefone.bulkCreate(contatos, { individualHooks: true })
+          .then((dataContatos) => {
+            if (!dataContatos) {
+              res.status(406).send({
+                message:
+                  "Problema ao fazer o cadastro de Telefone, tente mais tarde!",
+              });
+              return;
+            } else {
+              var jsonData = data.dataValues;
+              jsonData["contatosCadastro"] = dataContatos;
+
+              res.status(201).json(jsonData);
+            }
+          })
+          .catch((err) => {
+            res.status(500).send({ message: err.message || "Algo errado" });
+          });
+      } else {
+        var ddd = req.body.PesTelefone.substring(0, 2);
+        var telefone = req.body.PesTelefone.substring(2);
+
+        const contato = {
+          PesPessoasID: PessoasID,
+          PesContato: req.body.PesContato,
+          PesDDD: ddd,
+          PesTelefone: telefone,
+          PesEmail: req.body.PesEmail,
+        };
+
+        Telefone.create(contato)
+          .then((dataContatos) => {
+            if (!dataContatos) {
+              res.status(406).send({
+                message:
+                  "Problema ao fazer o cadastro de Telefone, tente mais tarde!",
+              });
+              return;
+            } else {
+              var jsonData = data.dataValues;
+              jsonData["contatosCadastro"] = dataContatos;
+
+              res.status(201).json(jsonData);
+            }
+          })
+          .catch((err) => {
+            res.status(500).send({ message: err.message || "Algo errado" });
+          });
+      }
     })
     .catch((err) => {
       res.status(500).json({

@@ -1,5 +1,9 @@
 const dbConfig = require("../config/db.config.js");
 const Sequelize = require("sequelize");
+
+/*
+  Chamada da configuração sendo feito em config/db.config.js
+ */
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
   port: dbConfig.PORT,
@@ -12,22 +16,23 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   },
 });
 
-try {
-  sequelize.authenticate();
-  console.log("Connection has been established successfully.");
-} catch (error) {
-  console.error("Unable to connect to the database:", error);
-}
+// try {
+//   sequelize.authenticate();
+//   console.log("Connection has been established successfully.");
+// } catch (error) {
+//   console.error("Unable to connect to the database:", error);
+// }
 
 const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
+/**
+ * Sequelize sendo chamado para cada model, afim de reconhecer as tabelas que ele lê direto da base
+ * Sempre que declarar um novo model necessário declarar aqui, caso contrário não terá a chamada
+ */
 db.tutorials = require("./tutorial.model.js")(sequelize, Sequelize);
 db.usuarios = require("./usuario.model.js")(sequelize, Sequelize);
 db.pessoas = require("./pessoa.model.js")(sequelize, Sequelize);
 db.telefones = require("./telefone.model.js")(sequelize, Sequelize);
 
 module.exports = db;
-
-/*Quando necessário criar novo model, necessário
-declarar acima o db com o sequelize e manter a estrutura */

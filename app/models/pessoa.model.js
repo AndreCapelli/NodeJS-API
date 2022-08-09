@@ -60,15 +60,17 @@ module.exports = (sequelize, Sequelize) => {
       },
     },
     {
-      // don't add the timestamp attributes (updatedAt, createdAt)
+      // Abaixo são os campos de tempo/ hora nativos do Sequelize
+      // Insert sem esse campo
       timestamps: false,
 
-      // If don't want createdAt
+      // Insert sem esse campo
       createdAt: false,
 
-      // If don't want updatedAt
+      // Insert sem esse campo
       updatedAt: false,
 
+      // Sempre colocar em tabelas que possuem triggers, dessa forma o Sequelize trata sozinho tudo que faz o disparo dela
       hasTrigger: true,
     }
   );
@@ -76,3 +78,11 @@ module.exports = (sequelize, Sequelize) => {
   Pessoa.removeAttribute("id");
   return Pessoa;
 };
+
+/**
+ * Modelo padrão do Model, ele segue os respectivos nomes que estão na base SQL Server
+ *
+ * Dados importantes:
+ * após o sequelize.define( vem o nome da tabela, nesse caso "Pessoas" e após isso todos os campos iguais do SQL,
+ * lembrar de declarar tipo de campo, quais são nulos, a PK e se algum tem valor padrão (defaultValue)
+ */

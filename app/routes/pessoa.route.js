@@ -1,15 +1,24 @@
 module.exports = (app) => {
   const pessoa = require("../controllers/pessoa.controller.js");
   const router = require("express").Router();
-  // Create a new pessoa
+  // Criar uma nova pessoa
   router.post("/", pessoa.create);
-  // Retrieve all pessoa
+  // Get em todas as pessoas
   router.get("/", pessoa.findAll);
-  // Retrieve a single pessoa with id
+  // Get em uma única pessoa por algum parametro :id (id no caso é apenas nomenclatura na hora de pegar esse valor)
   router.get("/:id", pessoa.findOne);
-  // Update a pessoa with id
+  // Update uma pessoa por algum parametro :id (id no caso é apenas nomenclatura na hora de pegar esse valor)
   router.put("/:id", pessoa.update);
-  //   // Delete a pessoa with id
+  //   // Delete uma pessoa por algum parametro :id (id no caso é apenas nomenclatura na hora de pegar esse valor)
   //   router.delete("/:id", pessoa.delete);
+
+  /**
+   * Declarar o use para identificar qual o endpoint completo dessa URL, no caso de Pessoas é
+   * {URL_servidor}:{Porta}/api/pessoas e o resto é complementar ao que está feito acima ^^
+   */
   app.use("/api/pessoas", router);
 };
+
+/**
+ * Rotas da Pessoa, sempre que necessário uma nova rota na criação da api, referente a estrutura que está criada é necessário declarar em suas route.js
+ */

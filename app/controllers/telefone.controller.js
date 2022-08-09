@@ -5,6 +5,8 @@ const Op = db.Sequelize.Op;
 exports.create = (req, res) => {
   const usuarioLogado = req.params.id;
 
+  console.log(req.body);
+
   if (!usuarioLogado) {
     res.status(406).send({ message: "Informar Usuário!" });
     return;
@@ -13,7 +15,20 @@ exports.create = (req, res) => {
   const arrayContatos = req.body.length;
 
   if (arrayContatos > 1) {
-    Telefone.bulkCreate(req.body, { individualHooks: true })
+    let contatos = req.body.map(function (ct) {
+      var ddd = ct.PesTelefone.substring(0, 2);
+      var telefone = ct.PesTelefone.substring(2);
+
+      return {
+        PesPessoasID: ct.PesPessoasID,
+        PesContato: ct.PesContato,
+        PesDDD: ddd,
+        PesTelefone: telefone,
+        PesEmail: ct.PesEmail,
+      };
+    });
+
+    Telefone.bulkCreate(contatos, { individualHooks: true })
       .then((data) => {
         if (!data) {
           res.status(406).send({
@@ -29,11 +44,14 @@ exports.create = (req, res) => {
         res.status(500).send({ message: err.message || "Algo errado" });
       });
   } else {
+    var ddd = req.body.PesTelefone.substring(0, 2);
+    var telefone = req.body.PesTelefone.substring(2);
+
     const contato = {
       PesPessoasID: req.body.PesPessoasID,
       PesContato: req.body.PesContato,
-      PesDDD: req.body.PesDDD,
-      PesTelefone: req.body.PesTelefone,
+      PesDDD: ddd,
+      PesTelefone: telefone,
       PesEmail: req.body.PesEmail,
     };
 
@@ -68,7 +86,7 @@ exports.findOne = (req, res) => {
     attributes: [
       "PessoasContatos_ID",
       "PesContato",
-      "PesDDD",
+      "PesDDD " + "PesTelefone",
       "PesTelefone",
       "PesEmail",
     ],
