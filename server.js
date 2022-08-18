@@ -37,6 +37,8 @@ require("./app/routes/tutorial.route")(app);
 require("./app/routes/usuario.route")(app);
 require("./app/routes/pessoa.route")(app);
 require("./app/routes/telefone.route")(app);
+require("./app/routes/unidadeEstrela.route")(app);
+require("./app/routes/subUnidadeEstrela.route")(app);
 
 // set port, listen for requests
 const PORT = 21000;

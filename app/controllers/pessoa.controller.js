@@ -79,8 +79,8 @@ exports.create = (req, res) => {
 
       if (arrayContatos > 1) {
         let contatos = req.body.contatosCadastro.map(function (ct) {
-          var ddd = ct.PesTelefone.substring(0, 2);
-          var telefone = ct.PesTelefone.substring(2);
+          var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
+          var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
 
           return {
             PesPessoasID: PessoasID,
@@ -110,8 +110,8 @@ exports.create = (req, res) => {
             res.status(500).send({ message: err.message || "Algo errado" });
           });
       } else {
-        var ddd = req.body.PesTelefone.substring(0, 2);
-        var telefone = req.body.PesTelefone.substring(2);
+        var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
+        var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
 
         const contato = {
           PesPessoasID: PessoasID,

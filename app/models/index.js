@@ -34,5 +34,10 @@ db.tutorials = require("./tutorial.model.js")(sequelize, Sequelize);
 db.usuarios = require("./usuario.model.js")(sequelize, Sequelize);
 db.pessoas = require("./pessoa.model.js")(sequelize, Sequelize);
 db.telefones = require("./telefone.model.js")(sequelize, Sequelize);
+db.unidadesEstrela = require("./unidadeEstrela.model.js")(sequelize, Sequelize);
+db.subUnidadesEstrela = require("./subUnidadeEstrela.model.js")(
+  sequelize,
+  Sequelize
+);
 
 module.exports = db;

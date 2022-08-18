@@ -86,7 +86,7 @@ exports.findOne = (req, res) => {
     attributes: [
       "PessoasContatos_ID",
       "PesContato",
-      "PesDDD " + "PesTelefone",
+      "PesDDD",
       "PesTelefone",
       "PesEmail",
     ],
