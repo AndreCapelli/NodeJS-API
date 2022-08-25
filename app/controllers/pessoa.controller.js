@@ -1,3 +1,4 @@
+const sequelize = require("sequelize");
 const db = require("../models");
 const Pessoa = db.pessoas;
 const Telefone = db.telefones;
@@ -16,6 +17,8 @@ exports.create = (req, res) => {
     res.status(406).json({ message: "Tipo de Pessoa não pode ser vazio" });
     return;
   }
+
+  console.log(req.body);
 
   let pessoa;
 
@@ -196,6 +199,113 @@ exports.findOne = (req, res) => {
         return;
       } else {
         res.status(200).json(data);
+      }
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Erro ao encontrar a Pessoa id=" + id,
+      });
+    });
+};
+
+exports.findDoc = (req, res) => {
+  const id = req.params.doc;
+
+  Pessoa.findOne({
+    where: {
+      [Op.or]: [{ JPesCNPJ: id }, { FPesCPF: id }],
+    },
+  })
+    .then((data) => {
+      if (!data) {
+        res.status(204).json({ message: "Nenhum conteudo" });
+        return;
+      } else {
+        Telefone.findAll({
+          where: { PesPessoasID: data.Pessoas_ID },
+          attributes: [
+            "PessoasContatos_ID",
+            "PesContato",
+            "PesDDD",
+            "PesTelefone",
+            "PesContato",
+            "PesEmail",
+          ],
+        })
+          .then((dataContatos) => {
+            if (data.length === 0) {
+              res.status(204);
+              return;
+            } else {
+              // let resPessoa;
+              if (data.PesTipoPessoa == "F") {
+                resPessoa = {
+                  Pessoas_ID: data.Pessoas_ID,
+                  PesNome: data.FPesNome,
+                  PesApelido: data.FPesApelido,
+                  PesDocumento: data.FPesCPF,
+                  PesTipoPessoa: data.PesTipoPessoa,
+                  PesEndereco: data.PesEndereco,
+                  PesComplementoEndereco: data.PesComplementoEndereco,
+                  PesEnderecoNumero: data.PesEnderecoNumero,
+                  PesBairro: data.PesBairro,
+                  PesCidade: data.PesCidade,
+                  PesEstado: data.PesEstado,
+                  PesUF: data.PesUF,
+                  PesCEP: data.PesCEP,
+                  PesEstrelaQuantidadeCartelas:
+                    data.PesEstrelaQuantidadeCartelas,
+                  PesIntegracoesEstrelaUnidadesID:
+                    data.PesIntegracoesEstrelaUnidadesID,
+                  PesIntegracoesEstrelaSUBUnidadesID:
+                    data.PesIntegracoesEstrelaSUBUnidadesID,
+                  PesEstrelaRotasID: data.PesEstrelaRotasID,
+                  PesIDImgApp: data.PesIDImgApp,
+                };
+              } else {
+                resPessoa = {
+                  Pessoas_ID: data.Pessoas_ID,
+                  PesNome: data.JPesRazaoSocial,
+                  PesApelido: data.JPesNomeFantasia,
+                  PesDocumento: data.JPesCNPJ,
+                  PesTipoPessoa: data.PesTipoPessoa,
+                  PesEndereco: data.PesEndereco,
+                  PesComplementoEndereco: data.PesComplementoEndereco,
+                  PesEnderecoNumero: data.PesEnderecoNumero,
+                  PesBairro: data.PesBairro,
+                  PesCidade: data.PesCidade,
+                  PesEstado: data.PesEstado,
+                  PesUF: data.PesUF,
+                  PesCEP: data.PesCEP,
+                  PesEstrelaQuantidadeCartelas:
+                    data.PesEstrelaQuantidadeCartelas,
+                  PesIntegracoesEstrelaUnidadesID:
+                    data.PesIntegracoesEstrelaUnidadesID,
+                  PesIntegracoesEstrelaSUBUnidadesID:
+                    data.PesIntegracoesEstrelaSUBUnidadesID,
+                  PesEstrelaRotasID: data.PesEstrelaRotasID,
+                  PesIDImgApp: data.PesIDImgApp,
+                };
+              }
+
+              const arrContatos = dataContatos.map((dt) => {
+                return {
+                  PessoasContatos_ID: dt.PessoasContatos_ID,
+                  PesContato: dt.PesContato,
+                  PesTelefone: dt.PesDDD + dt.PesTelefone,
+                  PesEmail: dt.PesEmail,
+                };
+              });
+
+              var jsonData = JSON.parse(JSON.stringify(resPessoa));
+              // var jsonData = JSON.parse(resPessoa).dataValues;
+              jsonData["telefones"] = arrContatos;
+              res.status(200).json(jsonData);
+            }
+          })
+          .catch((err) => {
+            return res.status(500).json(err);
+          });
       }
     })
     .catch((err) => {

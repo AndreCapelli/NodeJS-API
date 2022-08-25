@@ -58,6 +58,30 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING,
         defaultValue: (normalizedDate = new Date(Date.now()).toISOString()),
       },
+      PesPDV: {
+        type: Sequelize.BOOLEAN,
+      },
+      PesOrigemCadastro: {
+        type: Sequelize.STRING,
+      },
+      PesUsuarioCadastrouID: {
+        type: Sequelize.STRING,
+      },
+      PesEstrelaQuantidadeCartelas: {
+        type: Sequelize.INTEGER,
+      },
+      PesIntegracoesEstrelaUnidadesID: {
+        type: Sequelize.INTEGER,
+      },
+      PesIntegracoesEstrelaSUBUnidadesID: {
+        type: Sequelize.INTEGER,
+      },
+      PesEstrelaRotasID: {
+        type: Sequelize.INTEGER,
+      },
+      PesIDImgApp: {
+        type: Sequelize.STRING,
+      },
     },
     {
       // Abaixo são os campos de tempo/ hora nativos do Sequelize

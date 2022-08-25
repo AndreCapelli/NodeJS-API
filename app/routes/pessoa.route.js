@@ -6,7 +6,9 @@ module.exports = (app) => {
   // Get em todas as pessoas
   router.get("/", pessoa.findAll);
   // Get em uma única pessoa por algum parametro :id (id no caso é apenas nomenclatura na hora de pegar esse valor)
-  router.get("/:id", pessoa.findOne);
+  router.get("/id/:id", pessoa.findOne);
+  // Get em uma única pessoa por algum parametro :id (id no caso é apenas nomenclatura na hora de pegar esse valor)
+  router.get("/:doc", pessoa.findDoc);
   // Update uma pessoa por algum parametro :id (id no caso é apenas nomenclatura na hora de pegar esse valor)
   router.put("/:id", pessoa.update);
   //   // Delete uma pessoa por algum parametro :id (id no caso é apenas nomenclatura na hora de pegar esse valor)

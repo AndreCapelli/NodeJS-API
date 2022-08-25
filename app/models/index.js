@@ -16,12 +16,12 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   },
 });
 
-try {
-  sequelize.authenticate();
-  console.log("Connection has been established successfully.");
-} catch (error) {
-  console.error("Unable to connect to the database:", error);
-}
+// try {
+//   sequelize.authenticate();
+//   console.log("Connection has been established successfully.");
+// } catch (error) {
+//   console.error("Unable to connect to the database:", error);
+// }
 
 const db = {};
 db.Sequelize = Sequelize;
@@ -36,6 +36,11 @@ db.pessoas = require("./pessoa.model.js")(sequelize, Sequelize);
 db.telefones = require("./telefone.model.js")(sequelize, Sequelize);
 db.unidadesEstrela = require("./unidadeEstrela.model.js")(sequelize, Sequelize);
 db.subUnidadesEstrela = require("./subUnidadeEstrela.model.js")(
+  sequelize,
+  Sequelize
+);
+db.rotaEstrela = require("./rotaEstrela.model.js")(sequelize, Sequelize);
+db.estrelaExtracoes = require("./estrelaExtracoes.model.js")(
   sequelize,
   Sequelize
 );
