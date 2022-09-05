@@ -44,5 +44,9 @@ db.estrelaExtracoes = require("./estrelaExtracoes.model.js")(
   sequelize,
   Sequelize
 );
+db.extracoesDivisoes = require("./extracaoDivisao.model.js")(
+  sequelize,
+  Sequelize
+);
 
 module.exports = db;

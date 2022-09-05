@@ -55,6 +55,7 @@ require("./app/routes/unidadeEstrela.route")(app);
 require("./app/routes/subUnidadeEstrela.route")(app);
 require("./app/routes/rotaEstrela.route")(app);
 require("./app/routes/estrelaExtracoes.route")(app);
+require("./app/routes/extracaoDivisao.route")(app);
 
 // set port, listen for requests
 const PORT = 21000;
