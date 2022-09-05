@@ -5,7 +5,8 @@ const Op = db.Sequelize.Op;
 exports.findAll = (req, res) => {
   ExtracoesDivisoes.findAll({
     where: {
-      ExtracoesDivisoes_ID: req.params.id,
+      ExEstrelaExtracoesID: req.params.idEx,
+      EsPessoasID: req.params.idPes,
     },
   })
     .then((data) => {
