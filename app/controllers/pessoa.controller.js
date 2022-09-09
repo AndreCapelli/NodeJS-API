@@ -36,6 +36,10 @@ exports.create = (req, res) => {
       PesEstado: req.body.PesEstado,
       PesUF: req.body.PesUF,
       PesCEP: req.body.PesCEP,
+      PesPDV: 1,
+      PesOrigemCadastro: req.body.PesOrigemCadastro,
+      PesUsuarioCadastrouID: req.body.PesUsuarioCadastrouID,
+      PesIDImgApp: req.body.PesIDImgApp,
     };
   } else if (req.body.PesTipoPessoa == "J") {
     pessoa = {
@@ -51,6 +55,10 @@ exports.create = (req, res) => {
       PesEstado: req.body.PesEstado,
       PesUF: req.body.PesUF,
       PesCEP: req.body.PesCEP,
+      PesPDV: 1,
+      PesOrigemCadastro: req.body.PesOrigemCadastro,
+      PesUsuarioCadastrouID: req.body.PesUsuarioCadastrouID,
+      PesIDImgApp: req.body.PesIDImgApp,
     };
   } else {
     res.status(406).json({
