@@ -86,71 +86,38 @@ exports.create = (req, res) => {
       }
 
       const PessoasID = data.Pessoas_ID;
-      const arrayContatos = req.body.contatosCadastro.length;
 
-      if (arrayContatos > 1) {
-        let contatos = req.body.contatosCadastro.map(function (ct) {
-          var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
-          var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
-
-          return {
-            PesPessoasID: PessoasID,
-            PesContato: ct.PesContato,
-            PesDDD: ddd,
-            PesTelefone: telefone,
-            PesEmail: ct.PesEmail,
-          };
-        });
-
-        Telefone.bulkCreate(contatos, { individualHooks: true })
-          .then((dataContatos) => {
-            if (!dataContatos) {
-              res.status(406).send({
-                message:
-                  "Problema ao fazer o cadastro de Telefone, tente mais tarde!",
-              });
-              return;
-            } else {
-              var jsonData = data.dataValues;
-              jsonData["contatosCadastro"] = dataContatos;
-
-              res.status(201).json(jsonData);
-            }
-          })
-          .catch((err) => {
-            res.status(500).send({ message: err.message || "Algo errado" });
-          });
-      } else {
+      let contatos = req.body.contatosCadastro.map(function (ct) {
         var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
         var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
 
-        const contato = {
+        return {
           PesPessoasID: PessoasID,
-          PesContato: req.body.PesContato,
+          PesContato: ct.PesContato,
           PesDDD: ddd,
           PesTelefone: telefone,
-          PesEmail: req.body.PesEmail,
+          PesEmail: ct.PesEmail,
         };
+      });
 
-        Telefone.create(contato)
-          .then((dataContatos) => {
-            if (!dataContatos) {
-              res.status(406).send({
-                message:
-                  "Problema ao fazer o cadastro de Telefone, tente mais tarde!",
-              });
-              return;
-            } else {
-              var jsonData = data.dataValues;
-              jsonData["contatosCadastro"] = dataContatos;
+      Telefone.bulkCreate(contatos, { individualHooks: true })
+        .then((dataContatos) => {
+          if (!dataContatos) {
+            res.status(406).send({
+              message:
+                "Problema ao fazer o cadastro de Telefone, tente mais tarde!",
+            });
+            return;
+          } else {
+            var jsonData = data.dataValues;
+            jsonData["contatosCadastro"] = dataContatos;
 
-              res.status(201).json(jsonData);
-            }
-          })
-          .catch((err) => {
-            res.status(500).send({ message: err.message || "Algo errado" });
-          });
-      }
+            res.status(201).json(jsonData);
+          }
+        })
+        .catch((err) => {
+          res.status(500).send({ message: err.message || "Algo errado" });
+        });
     })
     .catch((err) => {
       res.status(500).json({
