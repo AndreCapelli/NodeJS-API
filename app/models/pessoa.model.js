@@ -68,16 +68,16 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING,
       },
       PesEstrelaQuantidadeCartelas: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
       },
       PesIntegracoesEstrelaUnidadesID: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
       },
       PesIntegracoesEstrelaSUBUnidadesID: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
       },
       PesEstrelaRotasID: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
       },
       PesIDImgApp: {
         type: Sequelize.STRING,

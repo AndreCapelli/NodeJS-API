@@ -39,6 +39,11 @@ exports.create = (req, res) => {
       PesPDV: 1,
       PesOrigemCadastro: req.body.PesOrigemCadastro,
       PesUsuarioCadastrouID: req.body.PesUsuarioCadastrouID,
+      PesEstrelaQuantidadeCartelas: req.body.PesEstrelaQuantidadeCartelas,
+      PesIntegracoesEstrelaUnidadesID: req.body.PesIntegracoesEstrelaUnidadesID,
+      PesIntegracoesEstrelaSUBUnidadesID:
+        req.body.PesIntegracoesEstrelaSUBUnidadesID,
+      PesEstrelaRotasID: req.body.PesEstrelaRotasID,
       PesIDImgApp: req.body.PesIDImgApp,
     };
   } else if (req.body.PesTipoPessoa == "J") {
@@ -58,6 +63,11 @@ exports.create = (req, res) => {
       PesPDV: 1,
       PesOrigemCadastro: req.body.PesOrigemCadastro,
       PesUsuarioCadastrouID: req.body.PesUsuarioCadastrouID,
+      PesEstrelaQuantidadeCartelas: req.body.PesEstrelaQuantidadeCartelas,
+      PesIntegracoesEstrelaUnidadesID: req.body.PesIntegracoesEstrelaUnidadesID,
+      PesIntegracoesEstrelaSUBUnidadesID:
+        req.body.PesIntegracoesEstrelaSUBUnidadesID,
+      PesEstrelaRotasID: req.body.PesEstrelaRotasID,
       PesIDImgApp: req.body.PesIDImgApp,
     };
   } else {
@@ -122,8 +132,8 @@ exports.create = (req, res) => {
     .catch((err) => {
       res.status(500).json({
         message:
-          err.message ||
-          "Algum erro aconteceu na criação da Pessoa. Tente mais tarde!",
+          err.message +
+          " Algum erro aconteceu na criação da Pessoa. Tente mais tarde!",
       });
     });
 };
