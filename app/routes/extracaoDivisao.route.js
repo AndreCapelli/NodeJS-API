@@ -3,6 +3,7 @@ module.exports = (app) => {
   const router = require("express").Router();
 
   router.get("/:idEx&:idPes", extracoesDivisoes.findAll);
+  router.post("/", extracoesDivisoes.createAll);
 
   app.use("/api/extracoesDivisoes", router);
 };
