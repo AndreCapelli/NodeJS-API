@@ -11,8 +11,14 @@ module.exports = (sequelize, Sequelize) => {
       ExEstrelaExtracoesID: {
         type: Sequelize.INTEGER,
       },
+      EsTipoPessoa: {
+        type: Sequelize.INTEGER,
+      },
       EsPessoasID: {
         type: Sequelize.INTEGER,
+      },
+      EsOrigem: {
+        type: Sequelize.STRING,
       },
       EsUnidadesID: { type: Sequelize.INTEGER },
       EsDataDivisao: {
@@ -23,11 +29,10 @@ module.exports = (sequelize, Sequelize) => {
       EsInicio: { type: Sequelize.INTEGER },
       EsQuantidade: { type: Sequelize.INTEGER },
       EsFinal: { type: Sequelize.INTEGER },
-      EsConcretizado: { type: Sequelize.INTEGER },
+      EsConcretizado: { type: Sequelize.BOOLEAN },
       EsRangeCancelado: { type: Sequelize.INTEGER },
       EsDataCancelamento: {
         type: Sequelize.STRING,
-        defaultValue: (normalizedDate = new Date(Date.now()).toISOString()),
       },
     },
     {
