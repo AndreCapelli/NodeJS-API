@@ -54,22 +54,39 @@ exports.findPesID = (req, res) => {
     return;
   }
 
+  if (req.body.ClPessoasFiliaisID == "") {
+    res.status(406).json({ message: "Sem Filial ID" });
+    return;
+  }
+
   const PesFilialID = req.body.ClPessoasFiliaisID;
 
   async function ProcuraPesID() {
-    return await sequelize.query(
-      "SELECT PePessoasID, dbo.retornaNomeRazaoSocial(PePessoasID) Nome  " +
-        " FROM `PessoasFiliais` WHERE PessoasFiliais_ID = " +
-        PesFilialID,
-      {
-        type: QueryTypes.SELECT,
-      }
-    );
+    const result = await sequelize
+      .query(
+        "SELECT PePessoasID, dbo.retornaNomeRazaoSocial(PePessoasID) Nome  " +
+          " FROM PessoasFiliais WHERE PessoasFiliais_ID = " +
+          PesFilialID,
+        {
+          type: QueryTypes.SELECT,
+        }
+      )
+      .then((data) => {
+        if (!data) {
+          res.send({ message: "Nada encontrado" });
+          return;
+        } else {
+          res.send(data);
+          return;
+        }
+      })
+      .catch((err) => {
+        res.send({ message: "Bla " + err.message });
+        return;
+      });
+
+    return result;
   }
 
-  const qryResult = ProcuraPesID();
-
-  res.status(200).json(qryResult);
-
-  console.log(qryResult);
+  ProcuraPesID();
 };
