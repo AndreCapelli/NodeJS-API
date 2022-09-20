@@ -56,6 +56,8 @@ require("./app/routes/rotaEstrela.route")(app);
 require("./app/routes/estrelaExtracoes.route")(app);
 require("./app/routes/extracaoDivisao.route")(app);
 
+require("./app/routes/cloudInformacoesUsoTelas.route")(app);
+
 // set port, listen for requests
 const PORT = 21000;
 app.listen(PORT, () => {
