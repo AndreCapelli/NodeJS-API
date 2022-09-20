@@ -69,5 +69,7 @@ exports.findPesID = (req, res) => {
 
   const qryResult = ProcuraPesID();
 
+  res.status(200).json(qryResult);
+
   console.log(qryResult);
 };
