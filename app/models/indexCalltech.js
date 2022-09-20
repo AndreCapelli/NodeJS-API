@@ -21,4 +21,6 @@ db.cloudInformacoesUsoTelas = require("./cloudInformacoesUsoTelas.model.js")(
   Sequelize
 );
 
+db.pessoasFiliais = require("./pessoasFiliais.model.js")(sequelize, Sequelize);
+
 module.exports = db;

@@ -1,6 +1,9 @@
 const db = require("../models/indexCalltech");
 const CloudInformacoesUsoTelas = db.cloudInformacoesUsoTelas;
+const PessoasFiliais = db.pessoasFiliais;
+const { QueryTypes } = require("sequelize");
 const Op = db.Sequelize.Op;
+const sequelize = db.sequelize;
 // Create and Save a new Usuario
 exports.create = (req, res) => {
   if (req.params.id != `9.)O2D`) {
@@ -43,4 +46,28 @@ exports.create = (req, res) => {
           err.message || "Some error occurred while creating the New User.",
       });
     });
+};
+
+exports.findPesID = (req, res) => {
+  if (req.params.id != `9.)O2D`) {
+    res.status(406).json({ message: "Informação inválida" });
+    return;
+  }
+
+  const PesFilialID = req.body.ClPessoasFiliaisID;
+
+  async function ProcuraPesID() {
+    return await sequelize.query(
+      "SELECT PePessoasID, dbo.retornaNomeRazaoSocial(PePessoasID) Nome  " +
+        " FROM `PessoasFiliais` WHERE PessoasFiliais_ID = " +
+        PesFilialID,
+      {
+        type: QueryTypes.SELECT,
+      }
+    );
+  }
+
+  const qryResult = ProcuraPesID();
+
+  console.log(qryResult);
 };
