@@ -10,6 +10,12 @@ const sequelize = new Sequelize("Calltech_Oficial", "sa", "NAQfed24086", {
     acquire: 30000,
     idle: 10000,
   },
+  dialectOptions: {
+    useUTC: false, // for reading from database
+    timezone: "-03:00",
+  },
+  useUTC: false,
+  timezone: "-03:00", // for writing to database
 });
 
 const db = {};

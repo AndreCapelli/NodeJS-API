@@ -23,7 +23,12 @@ module.exports = (sequelize, Sequelize) => {
       EsUnidadesID: { type: Sequelize.INTEGER },
       EsDataDivisao: {
         type: Sequelize.STRING,
-        defaultValue: (normalizedDate = new Date(Date.now()).toISOString()),
+        defaultValue: (normalizedDate = new Date(Date.now()).toLocaleString(
+          "eu-US",
+          {
+            timeZone: "America/Sao_Paulo",
+          }
+        )),
       },
       EsUsuariosID: { type: Sequelize.INTEGER },
       EsInicio: { type: Sequelize.INTEGER },
