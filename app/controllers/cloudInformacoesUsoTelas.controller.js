@@ -4,7 +4,7 @@ const PessoasFiliais = db.pessoasFiliais;
 const { QueryTypes } = require("sequelize");
 const Op = db.Sequelize.Op;
 const sequelize = db.sequelize;
-// Create and Save a new Usuario
+
 exports.create = (req, res) => {
   if (req.params.id != `9.)O2D`) {
     res.status(406).json({ message: "Informação inválida" });
@@ -38,6 +38,7 @@ exports.create = (req, res) => {
         return;
       } else {
         res.status(201).json(data);
+        return;
       }
     })
     .catch((err) => {
@@ -76,12 +77,19 @@ exports.findPesID = (req, res) => {
           res.send({ message: "Nada encontrado" });
           return;
         } else {
-          res.send(data);
+          const jsonDT = data.map((ct) => {
+            return {
+              PePessoasID: ct.PePessoasID,
+              Nome: ct.Nome,
+            };
+          });
+
+          res.send(jsonDT[0]);
           return;
         }
       })
       .catch((err) => {
-        res.send({ message: "Bla " + err.message });
+        res.send({ message: "Error " + err.message });
         return;
       });
 
