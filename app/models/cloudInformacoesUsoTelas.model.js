@@ -41,9 +41,33 @@ module.exports = (sequelize, Sequelize) => {
       },
       ClPrimeiroAcesso: {
         type: Sequelize.STRING,
+        // get: function () {
+        //   // or use get(){ }
+        //   return this.getDataValue("ClPrimeiroAcesso").toLocaleDateString(
+        //     "pt-br"
+        //   );
+        // },
+        // set: function () {
+        //   // or use get(){ }
+        //   return this.getDataValue("ClUltimoAcesso").toLocaleDateString(
+        //     "pt-br"
+        //   );
+        // },
       },
       ClUltimoAcesso: {
         type: Sequelize.STRING,
+        // get: function () {
+        //   // or use get(){ }
+        //   return this.getDataValue("ClUltimoAcesso").toLocaleDateString(
+        //     "pt-br"
+        //   );
+        // },
+        // set: function () {
+        //   // or use get(){ }
+        //   return this.getDataValue("ClUltimoAcesso").toLocaleDateString(
+        //     "pt-br"
+        //   );
+        // },
       },
       ClDuracaoTotal: {
         type: Sequelize.STRING,

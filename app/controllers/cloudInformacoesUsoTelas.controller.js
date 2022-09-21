@@ -15,23 +15,23 @@ exports.create = (req, res) => {
     return ct.ClPessoasFiliaisID;
   });
 
-  CloudInformacoesUsoTelas.destroy({
-    where: { ClPessoasFiliaisID },
-  })
-    .then((data) => {
-      if (data >= 1) {
-        res.status(200).json({ message: "Deletado" });
-      } else {
-        res
-          .status(406)
-          .json({ message: "Erro ao deletar" + ClPessoasFiliaisID });
+  async function DeletaPessoasFiliaisID() {
+    const result = await sequelize.query(
+      "DELETE FROM CloudInformacoesUsoTelas WHERE ClPessoasFiliaisID = " +
+        ClPessoasFiliaisID[0],
+      {
+        type: QueryTypes.SELECT,
       }
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Erro inesperado " + err.message });
-    });
+    );
 
-  CloudInformacoesUsoTelas.bulkCreate(req.body, { individualHooks: true })
+    return result;
+  }
+
+  DeletaPessoasFiliaisID();
+
+  CloudInformacoesUsoTelas.bulkCreate(req.body, {
+    individualHooks: true,
+  })
     .then((data) => {
       if (!data) {
         res.status(406).send({ message: "Problema ao inserir" });
