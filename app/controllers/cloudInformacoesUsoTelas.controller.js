@@ -1,5 +1,6 @@
 const db = require("../models/indexCalltech");
 const CloudInformacoesUsoTelas = db.cloudInformacoesUsoTelas;
+const PessoasContratosAtualizacoes = db.pessoasContratosAtualizacoes;
 const { QueryTypes } = require("sequelize");
 const Op = db.Sequelize.Op;
 const sequelize = db.sequelize;
@@ -152,4 +153,19 @@ exports.ativacao = (req, res) => {
   }
 
   ProcuraAtivacao();
+};
+
+exports.ativacaoResult = (req, res) => {
+  if (req.params.id != `9.)O2D`) {
+    res.status(406).json({ message: "Informação inválida" });
+    return;
+  }
+
+  PessoasContratosAtualizacoes.create(req.body)
+    .then((data) => {
+      res.status(201).json(data);
+    })
+    .catch((err) => {
+      res.status(500).send({ message: "Erro " + err.message });
+    });
 };
