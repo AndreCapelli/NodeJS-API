@@ -119,7 +119,7 @@ exports.ativacao = (req, res) => {
           " Inner Join Solucoes ON Solucoes_ID = PeSolucoesID " +
           " Where PePessoasFiliaisID = " +
           PesFilialID +
-          " And SoNome = ''MaxSmart'' order by PessoasContratos_ID desc",
+          " And SoNome = 'MaxSmart' order by PessoasContratos_ID desc",
         {
           type: QueryTypes.SELECT,
         }
