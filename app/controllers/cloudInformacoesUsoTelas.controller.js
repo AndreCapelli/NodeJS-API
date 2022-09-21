@@ -1,6 +1,5 @@
 const db = require("../models/indexCalltech");
 const CloudInformacoesUsoTelas = db.cloudInformacoesUsoTelas;
-const PessoasFiliais = db.pessoasFiliais;
 const { QueryTypes } = require("sequelize");
 const Op = db.Sequelize.Op;
 const sequelize = db.sequelize;
@@ -97,4 +96,60 @@ exports.findPesID = (req, res) => {
   }
 
   ProcuraPesID();
+};
+
+exports.ativacao = (req, res) => {
+  if (req.params.id != `9.)O2D`) {
+    res.status(406).json({ message: "Informação inválida" });
+    return;
+  }
+
+  if (req.body.ClPessoasFiliaisID == "") {
+    res.status(406).json({ message: "Sem Filial ID" });
+    return;
+  }
+
+  const PesFilialID = req.body.ClPessoasFiliaisID;
+
+  async function ProcuraAtivacao() {
+    const result = await sequelize
+      .query(
+        "SELECT PessoasContratos_ID, PeStatusContrato, PeDataExpiracao,  " +
+          " PeQtdOperadores, PeQtdSupervisores FROM PessoasContratos " +
+          " Inner Join Solucoes ON Solucoes_ID = PeSolucoesID " +
+          " Where PePessoasFiliaisID = " +
+          PesFilialID +
+          " And SoNome = ''MaxSmart'' order by PessoasContratos_ID desc",
+        {
+          type: QueryTypes.SELECT,
+        }
+      )
+      .then((data) => {
+        if (!data) {
+          res.send({ message: "Nada encontrado" });
+          return;
+        } else {
+          const jsonDT = data.map((ct) => {
+            return {
+              PessoasContratos_ID: ct.PessoasContratos_ID,
+              PeStatusContrato: ct.PeStatusContrato,
+              PeDataExpiracao: ct.PeDataExpiracao,
+              PeQtdOperadores: ct.PeQtdOperadores,
+              PeQtdSupervisores: ct.PeQtdSupervisores,
+            };
+          });
+
+          res.send(jsonDT[0]);
+          return;
+        }
+      })
+      .catch((err) => {
+        res.send({ message: "Error " + err.message });
+        return;
+      });
+
+    return result;
+  }
+
+  ProcuraAtivacao();
 };

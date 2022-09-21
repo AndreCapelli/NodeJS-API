@@ -2,9 +2,11 @@ module.exports = (app) => {
   const cloudInformacoesUsoTelas = require("../controllers/cloudInformacoesUsoTelas.controller.js");
   const router = require("express").Router();
 
-  router.post("/:id", cloudInformacoesUsoTelas.create);
+  router.post("/usosTelas/:id", cloudInformacoesUsoTelas.create);
 
-  router.get("/:id", cloudInformacoesUsoTelas.findPesID);
+  router.get("/usosTelas/:id", cloudInformacoesUsoTelas.findPesID);
 
-  app.use("/api/usosTelas", router);
+  router.get("/ativaSmart/:id", cloudInformacoesUsoTelas.ativacao);
+
+  app.use("/api", router);
 };
