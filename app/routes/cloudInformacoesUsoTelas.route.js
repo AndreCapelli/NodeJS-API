@@ -9,6 +9,10 @@ module.exports = (app) => {
   router.get("/ativaSmart/:id", cloudInformacoesUsoTelas.ativacao);
 
   router.post("/ativaSmart/:id", cloudInformacoesUsoTelas.ativacaoResult);
+  router.post(
+    "/ativaSmartVersoes/:id",
+    cloudInformacoesUsoTelas.ativacaoVersao
+  );
 
   app.use("/api", router);
 };
