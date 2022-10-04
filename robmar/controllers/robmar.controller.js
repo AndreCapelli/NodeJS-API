@@ -1,6 +1,7 @@
 const db = require("../models/index");
 const sequelize = db.sequelize;
 const { QueryTypes } = require("sequelize");
+const funcoes = require("../../funcoes_utils/funcoes/funcoes");
 
 exports.retcampanhas = (req, res) => {
   sequelize
@@ -28,13 +29,14 @@ exports.retcampanhas = (req, res) => {
     });
 };
 
-exports.newPerson = (req, res) => {
+exports.newPerson = async (req, res) => {
   let validaemail;
+  let validaTel;
   let idConta;
   let idPessoa;
 
-  async function ValidaUsuarioRD() {
-    const rd = await sequelize
+  async function aValidaUsuarioRD() {
+    await sequelize
       .query("SELECT TOP 1 * From UsuariosRDStations", {
         type: QueryTypes.SELECT,
       })
@@ -52,45 +54,103 @@ exports.newPerson = (req, res) => {
       .catch((err) => {
         res.status(400).send({ erro: err.message });
       });
-    return rd;
+    return;
   }
 
-  async function aValidaUsuarioRD() {
-    await ValidaUsuarioRD();
-  }
+  await aValidaUsuarioRD();
 
-  aValidaUsuarioRD();
-  console.log("Chegou");
+  await sequelize
+    .query(
+      "SELECT ISNULL(CoValidarTelefoneImportacao,0) coValida FROM ConfiguracoesSistemas ",
+      {
+        type: QueryTypes.SELECT,
+      }
+    )
+    .then((data) => {
+      if (data.length === 0) {
+        validaTel = false;
+      } else {
+        validaTel = data[0].coValida;
+      }
+    })
+    .catch((err) => {
+      res.status(400).send({ erro: err.message });
+    });
+
+  console.log("Chegou ln 79");
+
+  let leTelefone1, leTelefone2;
+
+  leTelefone1 = await funcoes.fnc_RetiraNumerosString(
+    req.body.leads[0].personal_phone
+  );
+  leTelefone2 = await funcoes.fnc_RetiraNumerosString(
+    req.body.leads[0].mobile_phone
+  );
+
+  console.log(leTelefone1);
+
+  if (
+    leTelefone1.length == 12 ||
+    (leTelefone1.length == 13 && leTelefone1.substring(0, 2) == "55")
+  )
+    leTelefone1 = leTelefone1.substring(4, 20);
+
+  if (
+    leTelefone2.length == 12 ||
+    (leTelefone2.length == 13 && leTelefone2.substring(0, 2) == "55")
+  )
+    leTelefone2 = leTelefone2.substring(4, 20);
+
+  console.log(leTelefone1);
+  console.log(leTelefone2);
+
+  let leOrigem1, leOrigem2;
+  leOrigem1 = req.body.leads[0].first_conversion.conversion_origin.source;
+  leOrigem2 = req.body.leads[0].last_conversion.conversion_origin.source;
 
   // && - and do if
   // || - or do if
   // != - diferente <>
-  if (validaemail && req.body.leads[0].email != "") {
-    sequelize
+  await sequelize
+    .query(
+      // exemplo de IIF js..
+      validaemail && req.body.leads[0].email != ""
+        ? `Select distinct Pessoas_ID From Pessoas With(NOLOCK) 
+   Inner Join PessoasContatos ON Pessoas_ID = PesPessoasID  Where ISNULL(PesEmail,'') ='${req.body.leads[0].email}'`
+        : `Select distinct Pessoas_ID From Pessoas With(NOLOCK) Where ISNULL(PesRDStationID,'') =
+   '${req.body.leads[0].id}'`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    )
+    .then((data) => {
+      if (data.length === 0) {
+        idPessoa = "";
+        //res.status(200).send({ mensamge: "sem conteudo" });
+      } else {
+        idPessoa = data[0].Pessoas_ID;
+        //res.status(200).json(data);
+      }
+    })
+    .catch((err) => {
+      res.status(400).send({ erro: err.message });
+    });
+
+  console.log(idPessoa);
+  if (idPessoa == "") {
+    console.log("Pessoa não encontrada, inserindo");
+
+    await sequelize
       .query(
-        // exemplo de IIF js..
-        validaemail && req.body.leads[0].email != ""
-          ? `Select distinct Pessoas_ID From Pessoas With(NOLOCK) 
-       Inner Join PessoasContatos ON Pessoas_ID = PesPessoasID  Where ISNULL(PesEmail,'') ='${req.body.leads[0].email}'`
-          : `Select distinct Pessoas_ID From Pessoas With(NOLOCK) Where ISNULL(PesRDStationID,'') =
-       '${req.body.leads[0].id}'`,
-        {
-          type: QueryTypes.SELECT,
-        }
+        "INSERT INTO LayoutImportacoesLogs(LaUsuariosID, LaDataImportacao, LaLoteImportacao, LaResultado, LaMotivo) " +
+          "VALUES(13, GETDATE(), -15, 'RD: Robmar ', 'Pessoa não encontrada, será cadastrada') ",
+        { type: QueryTypes.INSERT }
       )
-      .then((data) => {
-        if (data.length === 0) {
-          idPessoa = "";
-          res.status(200).send({ mensamge: "sem conteudo" });
-        } else {
-          idPessoa = data[0].Pessoas_ID;
-          res.status(200).json(data);
-        }
-      })
       .catch((err) => {
         res.status(400).send({ erro: err.message });
       });
   } else {
-    idPessoa = validaemail ? "" : 0;
-  }
-};
+    console.log("Pessoa encontrada, atualizando");
+  } // fim do if cadastra ou atualiza pessoa
+}; // fim newPerson
