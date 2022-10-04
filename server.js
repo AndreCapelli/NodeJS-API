@@ -45,6 +45,13 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome - API MaxMobile" });
 });
 
+const calc = require("./funcoes_utils/calculos/calculos");
+app.get("/usaCalculo", async (req, res) => {
+  const calculoJuros = await calc.CalculaJuros(4500, 5.1, 55, "C");
+  console.log(calculoJuros);
+  res.status(200).json(calculoJuros);
+});
+
 /* Após a criação de uma nova rota, declarar abaixo
 para validar sua endpoint na estrutura */
 require("./app/routes/tutorial.route")(app);
