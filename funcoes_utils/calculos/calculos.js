@@ -1,3 +1,5 @@
+let CalcDataVencimento = [];
+
 exports.CalculaJuros = (Valor, Juros, Dias, Tipo) => {
   let li, nDias, vJuros;
 
@@ -66,10 +68,10 @@ exports.CalculaHonorariosReverso = (RVFH, VO) => {
   return (RVFH / VO) * 100;
 };
 
-exports.CalculaPrice = (
-  Valor,
-  Parcelas,
-  Periodicidade,
-  Vencimento,
-  Juros
-) => {};
+exports.CalculaPrice = (Valor, Parcelas, Periodicidade, Vencimento, Juros) => {
+  CalcDataVencimento.push("21/01/2022");
+  CalcDataVencimento.push("22/01/2022");
+  CalcDataVencimento.push("23/01/2022");
+
+  console.log(CalcDataVencimento);
+};

@@ -47,7 +47,8 @@ app.get("/", (req, res) => {
 
 const calc = require("./funcoes_utils/calculos/calculos");
 app.get("/usaCalculo", async (req, res) => {
-  const calculoJuros = await calc.CalculaJuros(4500, 5.1, 55, "C");
+  const calculoJuros = await calc.CalculaPrice(1, 5, 1, 1, 1);
+  console.log(calc.CalcDataVencimento);
   console.log(calculoJuros);
   res.status(200).json(calculoJuros);
 });
