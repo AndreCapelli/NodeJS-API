@@ -47,9 +47,16 @@ app.get("/", (req, res) => {
 
 const calc = require("./funcoes_utils/calculos/calculos");
 app.get("/usaCalculo", async (req, res) => {
-  const calculoJuros = await calc.CalculaPrice(1, 5, 1, 1, 1);
-  console.log(calc.CalcDataVencimento);
-  console.log(calculoJuros);
+  const calculoJuros = await calc.CalculaPrice(
+    1713.24,
+    2,
+    30,
+    "01/11/2022",
+    100,
+    false
+  );
+  // console.log(calc.CalcDataVencimento);
+  // console.log(calculoJuros);
   res.status(200).json(calculoJuros);
 });
 

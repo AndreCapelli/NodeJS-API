@@ -2,6 +2,9 @@ const sequelize = require("sequelize");
 const db = require("../models");
 const Pessoa = db.pessoas;
 const Telefone = db.telefones;
+const UnidadeEstrela = db.unidadesEstrela;
+const SubUnidadesEstrela = db.subUnidadesEstrela;
+const RotaEstrela = db.rotaEstrela;
 const Op = db.Sequelize.Op;
 
 /**
@@ -217,12 +220,44 @@ exports.findDoc = (req, res) => {
             "PesEmail",
           ],
         })
-          .then((dataContatos) => {
+          .then(async (dataContatos) => {
             if (data.length === 0) {
               res.status(204);
               return;
             } else {
-              // let resPessoa;
+              const buscaUnidade = await UnidadeEstrela.findByPk(
+                data.PesIntegracoesEstrelaUnidadesID
+              )
+                .then((dataUni) => {
+                  return dataUni;
+                })
+                .catch((err) => {
+                  return {
+                    InNome: "Vazio",
+                  };
+                });
+
+              const buscaSubUnidade = await SubUnidadesEstrela.findByPk(
+                data.PesIntegracoesEstrelaSUBUnidadesID
+              )
+                .then((dataSubUni) => {
+                  return dataSubUni;
+                })
+                .catch((err) => {
+                  return { InNomeSub: "Vazio" };
+                });
+
+              const buscaRota = await RotaEstrela.findByPk(
+                data.PesEstrelaRotasID
+              )
+                .then((dataRota) => {
+                  return dataRota;
+                })
+                .catch((err) => {
+                  return { EsNome: "Vazio" };
+                });
+
+              let resPessoa;
               if (data.PesTipoPessoa == "F") {
                 resPessoa = {
                   Pessoas_ID: data.Pessoas_ID,
@@ -240,11 +275,10 @@ exports.findDoc = (req, res) => {
                   PesCEP: data.PesCEP,
                   PesEstrelaQuantidadeCartelas:
                     data.PesEstrelaQuantidadeCartelas,
-                  PesIntegracoesEstrelaUnidadesID:
-                    data.PesIntegracoesEstrelaUnidadesID,
-                  PesIntegracoesEstrelaSUBUnidadesID:
-                    data.PesIntegracoesEstrelaSUBUnidadesID,
-                  PesEstrelaRotasID: data.PesEstrelaRotasID,
+                  PesIntegracoesEstrelaUnidadesNome: buscaUnidade.InNome,
+                  PesIntegracoesEstrelaSUBUnidadesNome:
+                    buscaSubUnidade.InNomeSub,
+                  PesEstrelaRotasNome: buscaRota.EsNome,
                   PesIDImgApp: data.PesIDImgApp,
                 };
               } else {
@@ -264,11 +298,10 @@ exports.findDoc = (req, res) => {
                   PesCEP: data.PesCEP,
                   PesEstrelaQuantidadeCartelas:
                     data.PesEstrelaQuantidadeCartelas,
-                  PesIntegracoesEstrelaUnidadesID:
-                    data.PesIntegracoesEstrelaUnidadesID,
-                  PesIntegracoesEstrelaSUBUnidadesID:
-                    data.PesIntegracoesEstrelaSUBUnidadesID,
-                  PesEstrelaRotasID: data.PesEstrelaRotasID,
+                  PesIntegracoesEstrelaUnidadesNome: buscaUnidade.InNome,
+                  PesIntegracoesEstrelaSUBUnidadesNome:
+                    buscaSubUnidade.InNomeSub,
+                  PesEstrelaRotasNome: buscaRota.EsNome,
                   PesIDImgApp: data.PesIDImgApp,
                 };
               }
@@ -284,7 +317,7 @@ exports.findDoc = (req, res) => {
 
               var jsonData = JSON.parse(JSON.stringify(resPessoa));
               // var jsonData = JSON.parse(resPessoa).dataValues;
-              jsonData["telefones"] = arrContatos;
+              jsonData["contatosCadastro"] = arrContatos;
               res.status(200).json(jsonData);
             }
           })
@@ -300,7 +333,7 @@ exports.findDoc = (req, res) => {
     });
 };
 
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
   const id = req.params.id;
 
   if (!id) {
@@ -310,14 +343,102 @@ exports.update = (req, res) => {
     return;
   }
 
-  Pessoa.update(req.body, {
+  if (!req.body.PesTipoPessoa) {
+    res.status(406).json({ message: "Tipo de Pessoa não pode ser vazio" });
+    return;
+  }
+
+  console.log(req.body);
+
+  let pessoa;
+
+  if (req.body.PesTipoPessoa == "F") {
+    pessoa = {
+      FPesNome: req.body.PesNome,
+      FPesApelido: req.body.PesApelido,
+      FPesCPF: req.body.PesDocumento,
+      PesTipoPessoa: req.body.PesTipoPessoa,
+      PesEndereco: req.body.PesEndereco,
+      PesComplementoEndereco: req.body.PesComplementoEndereco,
+      PesEnderecoNumero: req.body.PesEnderecoNumero,
+      PesBairro: req.body.PesBairro,
+      PesCidade: req.body.PesCidade,
+      PesEstado: req.body.PesEstado,
+      PesUF: req.body.PesUF,
+      PesCEP: req.body.PesCEP,
+      PesPDV: 1,
+      PesOrigemCadastro: req.body.PesOrigemCadastro,
+      PesUsuarioCadastrouID: req.body.PesUsuarioCadastrouID,
+      PesEstrelaQuantidadeCartelas: req.body.PesEstrelaQuantidadeCartelas,
+      PesIntegracoesEstrelaUnidadesID: req.body.PesIntegracoesEstrelaUnidadesID,
+      PesIntegracoesEstrelaSUBUnidadesID:
+        req.body.PesIntegracoesEstrelaSUBUnidadesID,
+      PesEstrelaRotasID: req.body.PesEstrelaRotasID,
+      PesIDImgApp: req.body.PesIDImgApp,
+    };
+  } else if (req.body.PesTipoPessoa == "J") {
+    pessoa = {
+      JPesRazaoSocial: req.body.PesNome,
+      JPesNomeFantasia: req.body.PesApelido,
+      JPesCNPJ: req.body.PesDocumento,
+      PesTipoPessoa: req.body.PesTipoPessoa,
+      PesEndereco: req.body.PesEndereco,
+      PesComplementoEndereco: req.body.PesComplementoEndereco,
+      PesEnderecoNumero: req.body.PesEnderecoNumero,
+      PesBairro: req.body.PesBairro,
+      PesCidade: req.body.PesCidade,
+      PesEstado: req.body.PesEstado,
+      PesUF: req.body.PesUF,
+      PesCEP: req.body.PesCEP,
+      PesPDV: 1,
+      PesOrigemCadastro: req.body.PesOrigemCadastro,
+      PesUsuarioCadastrouID: req.body.PesUsuarioCadastrouID,
+      PesEstrelaQuantidadeCartelas: req.body.PesEstrelaQuantidadeCartelas,
+      PesIntegracoesEstrelaUnidadesID: req.body.PesIntegracoesEstrelaUnidadesID,
+      PesIntegracoesEstrelaSUBUnidadesID:
+        req.body.PesIntegracoesEstrelaSUBUnidadesID,
+      PesEstrelaRotasID: req.body.PesEstrelaRotasID,
+      PesIDImgApp: req.body.PesIDImgApp,
+    };
+  } else {
+    res.status(406).json({
+      message:
+        "Tipo de Pessoa inválido. Por favor verifique e tente novamente!",
+    });
+    return;
+  }
+
+  Pessoa.update(pessoa, {
     where: { Pessoas_ID: id },
   })
-    .then((num) => {
+    .then(async (num) => {
       if (num == 1) {
-        res
-          .status(200)
-          .json({ message: "Pessoa :" + id + " atualizada com Sucesso!" });
+        const contatos = req.body.contatosCadastro.map(function (ct) {
+          var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
+          var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
+
+          return {
+            PesPessoasID: id,
+            PesContato: ct.PesContato,
+            PesDDD: ddd,
+            PesTelefone: telefone,
+            PesEmail: ct.PesEmail,
+          };
+        });
+
+        await Telefone.destroy({ where: { PesPessoasID: id } });
+
+        Telefone.bulkCreate(contatos, { individualHooks: true })
+          .then((dataContatos) => {
+            !dataContatos
+              ? res.status(200).send({ message: "Atualização Concluída" })
+              : res
+                  .status(209)
+                  .send({ message: "Pessoa e alguns telefones atualizados" });
+          })
+          .catch((err) => {
+            res.status(500).send({ message: err.message || "Algo errado" });
+          });
       } else {
         res
           .status(406)
@@ -326,7 +447,7 @@ exports.update = (req, res) => {
     })
     .catch((err) => {
       res.status(500).send({
-        message: err.message || "Erro ao atualizar. Tente mais tarde!",
+        message: "Xuparacada",
       });
     });
 };
