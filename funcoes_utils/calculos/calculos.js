@@ -163,5 +163,15 @@ exports.CalculaPrice = (
       vValorOriginalTotalParcelas + CalcValorParcela[index];
   }
 
-  return true;
+  let resultRetorna = CalcDataVencimento.map((id, index) => {
+    return {
+      CalcDataVencimento: CalcDataVencimento[index],
+      CalcValorParcela: CalcValorParcela[index],
+      CalcValorJuros: CalcValorJuros[index],
+      CalcDiasParcela: CalcDiasParcela[index],
+      CalcValorTotalParcela: CalcValorTotalParcela[index],
+    };
+  });
+
+  return resultRetorna;
 };
