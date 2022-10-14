@@ -2,6 +2,12 @@ exports.fnc_RetiraNumerosString = function (text) {
   return text.replace(/\D+/g, "");
 };
 
+exports.ArrumaData = (Data) => {
+  const dtOne = Data.split("-");
+
+  return dtOne[2] + "/" + dtOne[1] + "/" + dtOne[0];
+};
+
 exports.RetornaData = () => {
   const date = new Date(Date.now())
     .toLocaleString("pt-BR", {

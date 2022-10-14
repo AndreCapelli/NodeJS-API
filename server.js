@@ -4,6 +4,7 @@ const cors = require("cors");
 const app = express();
 const db = require("./app/models");
 const dbrob = require("./robmar/models");
+const dbPortal = require("./portal/models");
 
 /* Sequelize.SYNC com o force true para limpar as tabelas
 declaradas nos models */
@@ -73,6 +74,7 @@ require("./app/routes/estrelaExtracoes.route")(app);
 require("./app/routes/extracaoDivisao.route")(app);
 require("./app/routes/cloudInformacoesUsoTelas.route")(app);
 require("./robmar/routes/robmar.route")(app);
+require("./portal/routes/pessoas.route")(app);
 
 // set port, listen for requests
 const PORT = 21000;

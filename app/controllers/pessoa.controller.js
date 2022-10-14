@@ -201,7 +201,12 @@ exports.findDoc = (req, res) => {
 
   Pessoa.findOne({
     where: {
-      [Op.or]: [{ JPesCNPJ: id }, { FPesCPF: id }],
+      [Op.or]: [
+        { JPesCNPJ: id },
+        { FPesCPF: id },
+        { FPesNome: { [Op.like]: id } },
+        { JPesRazaoSocial: { [Op.like]: id } },
+      ],
     },
   })
     .then((data) => {
@@ -229,7 +234,7 @@ exports.findDoc = (req, res) => {
                 data.PesIntegracoesEstrelaUnidadesID
               )
                 .then((dataUni) => {
-                  return dataUni;
+                  return dataUni.InNome;
                 })
                 .catch((err) => {
                   return {
@@ -241,7 +246,7 @@ exports.findDoc = (req, res) => {
                 data.PesIntegracoesEstrelaSUBUnidadesID
               )
                 .then((dataSubUni) => {
-                  return dataSubUni;
+                  return dataSubUni.InNomeSub;
                 })
                 .catch((err) => {
                   return { InNomeSub: "Vazio" };
@@ -251,7 +256,7 @@ exports.findDoc = (req, res) => {
                 data.PesEstrelaRotasID
               )
                 .then((dataRota) => {
-                  return dataRota;
+                  return dataRota.InNomeSub;
                 })
                 .catch((err) => {
                   return { EsNome: "Vazio" };
