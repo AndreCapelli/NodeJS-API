@@ -32,7 +32,24 @@ exports.findOne = async (req, res) => {
     },
   })
     .then((data) => {
-      return data;
+      if (!data) {
+        res.status(406).send({ message: "Nenhuma Pessoa encontrada" });
+        return { Vazio: "" };
+      } else {
+        return {
+          Pessoas_ID: data[0].Pessoas_ID,
+          DevedorNome:
+            data[0].PesTipoPessoa == "F"
+              ? data[0].FPesNome
+              : data[0].JPesRazaoSocial,
+          DevedorDocumento:
+            data[0].PesTipoPessoa == "F" ? data[0].FPesCPF : data[0].JPesCNPJ,
+          DevedorApelido:
+            data[0].PesTipoPessoa == "F"
+              ? data[0].FPesApelido
+              : data[0].JPesNomeFantasia,
+        };
+      }
     })
     .catch((err) => {
       res.status(500).json({
@@ -40,15 +57,21 @@ exports.findOne = async (req, res) => {
       });
     });
 
-  const docsOriginais = await Movimentacoes.findAll({
+  const devedorCredores = await Movimentacoes.findAll({
     where: {
-      MoInadimplentesID: pessoaDevedor[0].Pessoas_ID,
+      MoInadimplentesID: pessoaDevedor.Pessoas_ID,
       MoStatusMovimentacao: 0,
       MoOrigemMovimentacao: {
         [Op.in]: ["I", "C"],
       },
       MoValorDocumento: { [Op.ne]: 0.0 },
     },
+    order: [
+      ["MoInadimplentesID", "ASC"],
+      ["MoClientesID", "ASC"],
+    ],
+    group: ["MoInadimplentesID", "MoClientesID"],
+    attributes: ["MoInadimplentesID", "MoClientesID"],
   })
     .then((data) => {
       return data;
@@ -59,63 +82,106 @@ exports.findOne = async (req, res) => {
       });
     });
 
-  const docsAtualizados = await docsOriginais.map((docs) => {
-    return {
-      MoInadimplentesID: docs.MoInadimplentesID,
-      MoClientesID: docs.MoClientesID,
-      MoValorDocumento:
-        docs.MoValorDocumento +
-        calculos.CalculaJuros(
-          docs.MoValorDocumento,
-          docs.MoPercentualJuros,
-          funcoes.CalculaDias(
-            funcoes.ArrumaData(docs.MoDataVencimento),
-            funcoes.RetornaData()
+  var testeJson = JSON.parse(JSON.stringify(pessoaDevedor));
+
+  for (let index = 0; index < devedorCredores.length; index++) {
+    const element = await devedorCredores[index].MoClientesID;
+
+    var dadosCredor = await Pessoas.findByPk(element)
+      .then((data) => {
+        if (!data) {
+          res.status(406).send({ message: "Nenhuma Pessoa encontrada" });
+          return { Vazio: "" };
+        } else {
+          return {
+            CredorID: data.Pessoas_ID,
+            CredorNome:
+              data.PesTipoPessoa == "F" ? data.FPesNome : data.JPesRazaoSocial,
+            CredorDocumento:
+              data.PesTipoPessoa == "F" ? data.FPesCPF : data.JPesCNPJ,
+            CredorApelido:
+              data.PesTipoPessoa == "F"
+                ? data.FPesApelido
+                : data.JPesNomeFantasia,
+          };
+        }
+      })
+      .catch((err) => {
+        res.status(500).json({
+          message: err.message + " Algum erro aconteceu na busca dos Credores!",
+        });
+      });
+
+    var docs = await Movimentacoes.findAll({
+      where: {
+        MoInadimplentesID: pessoaDevedor.Pessoas_ID,
+        MoClientesID: element,
+        // MoStatusMovimentacao: 0,
+        MoOrigemMovimentacao: {
+          [Op.in]: ["I", "C"],
+        },
+        MoValorDocumento: { [Op.ne]: 0.0 },
+      },
+      order: [
+        ["MoInadimplentesID", "ASC"],
+        ["MoClientesID", "ASC"],
+        ["MoDataVencimento", "ASC"],
+      ],
+    })
+      .then((data) => {
+        return data;
+      })
+      .catch((err) => {
+        res.status(500).json({
+          message:
+            err.message + " Algum erro aconteceu na busca dos Documentos!",
+        });
+      });
+
+    var docsAtualizados = await docs.map((docs) => {
+      return {
+        MoInadimplentesID: docs.MoInadimplentesID,
+        MoClientesID: docs.MoClientesID,
+        MoValorDocumento:
+          docs.MoValorDocumento +
+          calculos.CalculaJuros(
+            docs.MoValorDocumento,
+            docs.MoPercentualJuros,
+            funcoes.CalculaDias(
+              funcoes.ArrumaData(docs.MoDataVencimento),
+              funcoes.RetornaData()
+            ),
+            "S"
+          ) +
+          calculos.CalculaMulta(docs.MoValorDocumento, docs.MoPercentualMulta) +
+          calculos.CalculaCorrecao(
+            docs.MoValorDocumento,
+            docs.MoPercentualCorrecao
+          ) +
+          calculos.CalculaHonorarios(
+            docs.MoValorDocumento,
+            docs.MoPercentualHonorarios
           ),
-          "S"
-        ) +
-        calculos.CalculaMulta(docs.MoValorDocumento, docs.MoPercentualMulta) +
-        calculos.CalculaCorrecao(
-          docs.MoValorDocumento,
-          docs.MoPercentualCorrecao
-        ) +
-        calculos.CalculaHonorarios(
-          docs.MoValorDocumento,
-          docs.MoPercentualHonorarios
-        ),
-      MoDataVencimento: docs.MoDataVencimento,
-      MoNumeroDocumento: docs.MoNumeroDocumento,
-      MoTipoDocumento: docs.MoTipoDocumento,
-    };
-  });
+        MoDataVencimento: docs.MoDataVencimento,
+        MoNumeroDocumento: docs.MoNumeroDocumento,
+        MoTipoDocumento: docs.MoTipoDocumento,
+      };
+    });
 
-  const atualizaDocs = await docsAtualizados.map((docs) => {
-    return docs.MoValorDocumento;
-  });
+    var atualizaDocs = await docsAtualizados.map((docs) => {
+      return docs.MoValorDocumento;
+    });
 
-  var arrayDocs = JSON.parse(JSON.stringify(docsAtualizados));
-  arrayDocs["MoValorAtualizado"] = atualizaDocs.reduce((a, b) => a + b, 0);
+    testeJson["CredorID" + index] = dadosCredor.CredorID;
+    testeJson["CredorNome" + index] = dadosCredor.CredorNome;
+    testeJson["CredorDocumento" + index] = dadosCredor.CredorDocumento;
+    testeJson["CredorApelido" + index] = dadosCredor.CredorApelido;
+    testeJson["ValorAtualizado" + index] = atualizaDocs.reduce(
+      (a, b) => a + b,
+      0
+    );
+    testeJson["ArrayDocs" + index] = docsAtualizados;
+  }
 
-  //   console.log(arrayDocs);
-
-  //   [
-  //     "DevedorNome"= "",
-  //     "DevedorDocumento"= '',
-  //     "CredorNome"= "",
-  //     "CredorDocumento"="",
-  //     "ValorAtualizado"="",
-  //     "DocsAtualizados": {
-
-  //     },
-  //     "DevedorNome"= "",
-  //     "DevedorDocumento"= '',
-  //     "CredorNome"= "",
-  //     "CredorDocumento"="",
-  //     "ValorAtualizado"="",
-  //     "DocsAtualizados": {
-
-  //     }
-  //   ]
-
-  res.status(200).json(arrayDocs);
+  res.status(200).json(testeJson);
 };
