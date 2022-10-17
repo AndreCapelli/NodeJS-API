@@ -32,8 +32,8 @@ exports.findOne = async (req, res) => {
     },
   })
     .then((data) => {
-      if (!data) {
-        res.status(406).send({ message: "Nenhuma Pessoa encontrada" });
+      if (data.length === 0) {
+        res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
         return { Vazio: "" };
       } else {
         return {
