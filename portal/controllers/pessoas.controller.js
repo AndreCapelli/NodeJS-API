@@ -142,7 +142,29 @@ exports.findOne = async (req, res) => {
       return {
         MoInadimplentesID: docs.MoInadimplentesID,
         MoClientesID: docs.MoClientesID,
-        MoValorDocumento:
+        MoValorDocumento: docs.MoValorDocumento,
+        MoValorJuros: calculos.CalculaJuros(
+          docs.MoValorDocumento,
+          docs.MoPercentualJuros,
+          funcoes.CalculaDias(
+            funcoes.ArrumaData(docs.MoDataVencimento),
+            funcoes.RetornaData()
+          ),
+          "S"
+        ),
+        MoValorMulta: calculos.CalculaMulta(
+          docs.MoValorDocumento,
+          docs.MoPercentualMulta
+        ),
+        MoValorCorrecao: calculos.CalculaCorrecao(
+          docs.MoValorDocumento,
+          docs.MoPercentualCorrecao
+        ),
+        MoValorHonorarios: calculos.CalculaHonorarios(
+          docs.MoValorDocumento,
+          docs.MoPercentualHonorarios
+        ),
+        MoValorDocumentoAtualizado:
           docs.MoValorDocumento +
           calculos.CalculaJuros(
             docs.MoValorDocumento,
