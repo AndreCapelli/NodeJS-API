@@ -16,8 +16,8 @@ const funcoes = require("../../funcoes_utils/funcoes/funcoes");
  * o resto é apenas JS
  */
 exports.findOne = async (req, res) => {
-  if (!req.body.Documento) {
-    res
+  if (!req.params.Documento) {
+    resclea
       .status(406)
       .send({ message: "Documento inválido, por favor preencha novamente!" });
     return;
@@ -26,8 +26,8 @@ exports.findOne = async (req, res) => {
   const pessoaDevedor = await Pessoas.findAll({
     where: {
       [Op.or]: [
-        { JPesCNPJ: req.body.Documento },
-        { FPesCPF: req.body.Documento },
+        { JPesCNPJ: req.params.Documento },
+        { FPesCPF: req.params.Documento },
       ],
     },
   })
