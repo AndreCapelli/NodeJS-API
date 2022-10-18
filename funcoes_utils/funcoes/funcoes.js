@@ -1,3 +1,7 @@
+const db = require("../../portal/models/index");
+const sequelize = db.sequelize;
+const { QueryTypes } = require("sequelize");
+
 exports.fnc_RetiraNumerosString = function (text) {
   return text.replace(/\D+/g, "");
 };
@@ -65,4 +69,58 @@ exports.IncDay = (Data, Inc) => {
     .split(" ");
 
   return dateResult[0];
+};
+
+exports.RetornaIndiceTabela = async (
+  MesDivida,
+  TabelaIndiceID,
+  DocumentoID
+) => {
+  if (!TabelaIndiceID) {
+    return {
+      TaIndicesEconomicosID: TabelaIndiceID,
+      TaAno: "",
+      TaMes: "",
+      TaIndice: 0,
+      TaNome: "Indice não passado",
+    };
+  }
+
+  let dataDivida = this.ArrumaData(MesDivida);
+  dataDivida = dataDivida.split("/");
+  const anoDivida = dataDivida[2];
+  const mesDivida = dataDivida[1];
+
+  const tabelaIndice = await sequelize
+    .query(
+      `SELECT TOP 1 * FROM TabelaIndicesEconomicosMatriz WITH(NOLOCK) 
+        INNER JOIN TabelaIndicesEconomicos WITH(NOLOCK) ON TaIndicesEconomicosID = TabelaIndicesEconomicos_ID
+        WHERE TaIndicesEconomicosID = ${TabelaIndiceID} AND ISNULL(TaIndice,'') <> ''
+        ORDER BY TaAno DESC, TaMes DESC`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    )
+    .then((data) => {
+      return !data || data.length == 0
+        ? {
+            TaIndicesEconomicosID: TabelaIndiceID,
+            TaAno: anoDivida,
+            TaMes: mesDivida,
+            TaIndice: 0,
+            TaNome: "Nenhum Indice Encontrado ",
+          }
+        : data[0];
+    })
+    .catch((err) => {
+      return {
+        TaIndicesEconomicosID: TabelaIndiceID,
+        TaAno: anoDivida,
+        TaMes: mesDivida,
+        TaIndice: -1,
+        TaNome: "Erro " + err.message,
+      };
+    });
+
+  return tabelaIndice;
 };

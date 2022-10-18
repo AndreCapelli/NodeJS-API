@@ -129,6 +129,11 @@ exports.findOne = async (req, res) => {
         });
       });
 
+    var indiceCorrecao =
+      politicas.PeTabelaIndicesEconomicosID == null
+        ? 0
+        : await funcoes.RetornaIndiceTabela("", 1, 20);
+
     console.log("Jhon" + politicas.PeDescricao);
 
     var docs = await Movimentacoes.findAll({
