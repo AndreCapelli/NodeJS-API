@@ -37,5 +37,6 @@ db.sequelize = sequelize;
 
 db.pessoas = require("./pessoas.model.js")(sequelize, Sequelize);
 db.movimentacoes = require("./movimentacoes.model.js")(sequelize, Sequelize);
+db.politicas = require("./politicas.model.js")(sequelize, Sequelize);
 
 module.exports = db;

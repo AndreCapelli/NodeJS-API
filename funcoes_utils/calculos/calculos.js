@@ -25,12 +25,15 @@ exports.CalculaJuros = (Valor, Juros, Dias, Tipo) => {
     vJuros = ((Valor * Juros) / 3000) * Dias;
   }
 
+  vJuros = vJuros.toFixed(2);
   console.log("Vjuros: " + vJuros);
+
   return vJuros;
 };
 
 exports.CalculaMulta = (Valor, Multa) => {
-  return (Valor / 100) * Multa;
+  let vMulta = (Valor / 100) * Multa;
+  return vMulta.toFixed(2);
 };
 
 exports.CalculaCorrecao = (Valor, Correcao) => {

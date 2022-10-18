@@ -2,6 +2,7 @@ const sequelize = require("sequelize");
 const db = require("../models");
 const Pessoas = db.pessoas;
 const Movimentacoes = db.movimentacoes;
+const Politicas = db.politicas;
 const Op = db.Sequelize.Op;
 
 const calculos = require("../../funcoes_utils/calculos/calculos");
@@ -112,11 +113,29 @@ exports.findOne = async (req, res) => {
         });
       });
 
+    var politicas = await Politicas.findAll({
+      where: {
+        PePessoasID: dadosCredor.CredorID,
+      },
+    })
+      .then((data) => {
+        return data[0];
+      })
+      .catch((err) => {
+        res.status(500).json({
+          message:
+            err.message +
+            " Algum erro aconteceu na busca das Politicas de cobrança!",
+        });
+      });
+
+    console.log("Jhon" + politicas.PeDescricao);
+
     var docs = await Movimentacoes.findAll({
       where: {
         MoInadimplentesID: pessoaDevedor.Pessoas_ID,
         MoClientesID: element,
-        // MoStatusMovimentacao: 0,
+        MoStatusMovimentacao: 0,
         MoOrigemMovimentacao: {
           [Op.in]: ["I", "C"],
         },
@@ -140,21 +159,26 @@ exports.findOne = async (req, res) => {
 
     var docsAtualizados = await docs.map((docs) => {
       return {
+        Movimentacoes_ID: docs.Movimentacoes_ID,
         MoInadimplentesID: docs.MoInadimplentesID,
         MoClientesID: docs.MoClientesID,
         MoValorDocumento: docs.MoValorDocumento,
+        MoDiasAtraso: funcoes.CalculaDias(
+          funcoes.ArrumaData(docs.MoDataVencimento),
+          funcoes.RetornaData()
+        ),
         MoValorJuros: calculos.CalculaJuros(
           docs.MoValorDocumento,
-          docs.MoPercentualJuros,
+          politicas.PeJuros,
           funcoes.CalculaDias(
             funcoes.ArrumaData(docs.MoDataVencimento),
             funcoes.RetornaData()
           ),
-          "S"
+          politicas.PeTipoJuros == "" ? "S" : politicas.PeTipoJuros
         ),
         MoValorMulta: calculos.CalculaMulta(
           docs.MoValorDocumento,
-          docs.MoPercentualMulta
+          politicas.PeMulta
         ),
         MoValorCorrecao: calculos.CalculaCorrecao(
           docs.MoValorDocumento,
