@@ -129,11 +129,6 @@ exports.findOne = async (req, res) => {
         });
       });
 
-    var indiceCorrecao =
-      politicas.PeTabelaIndicesEconomicosID == null
-        ? 0
-        : await funcoes.RetornaIndiceTabela("", 1, 20);
-
     console.log("Jhon" + politicas.PeDescricao);
 
     var docs = await Movimentacoes.findAll({
@@ -162,7 +157,14 @@ exports.findOne = async (req, res) => {
         });
       });
 
-    var docsAtualizados = await docs.map((docs) => {
+    var docsAtualizados = await docs.map(async (docs) => {
+      var indiceCorrecao = funcoes.RetornaIndiceTabela(
+        docs.MoDataVencimento,
+        politicas.PeTabelaIndicesEconomicosID,
+        docs.Movimentacoes_ID
+      );
+
+      console.log(indiceCorrecao.TaIndice);
       return {
         Movimentacoes_ID: docs.Movimentacoes_ID,
         MoInadimplentesID: docs.MoInadimplentesID,
@@ -185,10 +187,7 @@ exports.findOne = async (req, res) => {
           docs.MoValorDocumento,
           politicas.PeMulta
         ),
-        MoValorCorrecao: calculos.CalculaCorrecao(
-          docs.MoValorDocumento,
-          docs.MoPercentualCorrecao
-        ),
+        MoValorCorrecao: 0,
         MoValorHonorarios: calculos.CalculaHonorarios(
           docs.MoValorDocumento,
           docs.MoPercentualHonorarios

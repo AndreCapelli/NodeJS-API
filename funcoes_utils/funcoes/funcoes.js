@@ -95,7 +95,7 @@ exports.RetornaIndiceTabela = async (
     .query(
       `SELECT TOP 1 * FROM TabelaIndicesEconomicosMatriz WITH(NOLOCK) 
         INNER JOIN TabelaIndicesEconomicos WITH(NOLOCK) ON TaIndicesEconomicosID = TabelaIndicesEconomicos_ID
-        WHERE TaIndicesEconomicosID = ${TabelaIndiceID} AND ISNULL(TaIndice,'') <> ''
+        WHERE TaIndicesEconomicosID = ${TabelaIndiceID} AND ISNULL(TaIndice,'') <> '' 
         ORDER BY TaAno DESC, TaMes DESC`,
       {
         type: QueryTypes.SELECT,
