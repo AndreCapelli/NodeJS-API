@@ -59,6 +59,9 @@ module.exports = (sequelize, Sequelize) => {
       PeAplicaMultaValorJuros: {
         type: Sequelize.BOOLEAN,
       },
+      PeHonorarioSobVA: {
+        type: Sequelize.BOOLEAN,
+      },
       PeCustasAcordo: {
         type: Sequelize.DOUBLE,
       },

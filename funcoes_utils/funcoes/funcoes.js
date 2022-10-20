@@ -76,51 +76,103 @@ exports.RetornaIndiceTabela = async (
   TabelaIndiceID,
   DocumentoID
 ) => {
-  if (!TabelaIndiceID) {
-    return {
-      TaIndicesEconomicosID: TabelaIndiceID,
-      TaAno: "",
-      TaMes: "",
-      TaIndice: 0,
-      TaNome: "Indice não passado",
-    };
-  }
-
   let dataDivida = this.ArrumaData(MesDivida);
   dataDivida = dataDivida.split("/");
   const anoDivida = dataDivida[2];
   const mesDivida = dataDivida[1];
 
-  const tabelaIndice = await sequelize
+  const DateAtual = new Date();
+  let mesAtual = DateAtual.getMonth();
+  let anoAtual = DateAtual.getUTCFullYear();
+
+  let indiceAntigo;
+  let IndiceAtual;
+  let nomeIndice;
+
+  //nome indice
+  const tabelaNome = await sequelize
     .query(
-      `SELECT TOP 1 * FROM TabelaIndicesEconomicosMatriz WITH(NOLOCK) 
-        INNER JOIN TabelaIndicesEconomicos WITH(NOLOCK) ON TaIndicesEconomicosID = TabelaIndicesEconomicos_ID
-        WHERE TaIndicesEconomicosID = ${TabelaIndiceID} AND ISNULL(TaIndice,'') <> '' 
-        ORDER BY TaAno DESC, TaMes DESC`,
-      {
-        type: QueryTypes.SELECT,
-      }
+      `SELECT TaNome FROM TabelaIndicesEconomicos WITH(NOLOCK) 
+  WHERE TabelaIndicesEconomicos_ID = ${TabelaIndiceID} `,
+      { type: QueryTypes.SELECT }
     )
     .then((data) => {
-      return !data || data.length == 0
-        ? {
-            TaIndicesEconomicosID: TabelaIndiceID,
-            TaAno: anoDivida,
-            TaMes: mesDivida,
-            TaIndice: 0,
-            TaNome: "Nenhum Indice Encontrado ",
-          }
-        : data[0];
+      if (!data || data.length == 0) {
+        nomeIndice = "";
+      }
+      //encontrou registro, trato o mesmo
+      {
+        nomeIndice = data[0].TaNome;
+      }
     })
     .catch((err) => {
-      return {
-        TaIndicesEconomicosID: TabelaIndiceID,
-        TaAno: anoDivida,
-        TaMes: mesDivida,
-        TaIndice: -1,
-        TaNome: "Erro " + err.message,
-      };
+      console.log("Erro ao capturar o nome do indice: " + err.message);
     });
 
-  return tabelaIndice;
+  console.log(nomeIndice);
+
+  //indice antigo
+  const tabelaIndiceantigo = await sequelize
+    .query(
+      `SELECT TOP 1 *, TaNome FROM TabelaIndicesEconomicosMatriz T WITH(NOLOCK) 
+    INNER JOIN TabelaIndicesEconomicos WITH(NOLOCK) ON TaIndicesEconomicosID = TabelaIndicesEconomicos_ID
+    WHERE TaIndicesEconomicosID = ${TabelaIndiceID} AND ISNULL(TaIndice,'') <> '' AND TaAno = ${anoDivida} AND convert(int,TaMes) = ${mesDivida}`,
+      { type: QueryTypes.SELECT }
+    )
+    .then((data) => {
+      if (!data || data.length == 0) {
+        console.log("Indice antigo não encontrado");
+        indiceAntigo = 0;
+        return 0;
+      }
+      //encontrou registro, trato o mesmo
+      {
+        indiceAntigo = data[0].TaIndice;
+        if (indiceAntigo === 0) {
+          console.log("Indice antigo = 0");
+          indiceAntigo = 0;
+          return 0;
+        }
+      }
+    })
+    .catch((err) => {
+      console.log("Erro indice antigo: " + err.message);
+      return -1;
+    });
+  //fim indice antigo
+
+  //indice atual
+  const tabelaIndiceAtual = await sequelize
+    .query(
+      `SELECT TOP 1 * FROM TabelaIndicesEconomicosMatriz T WITH(NOLOCK) 
+    WHERE TaIndicesEconomicosID = ${TabelaIndiceID} AND ISNULL(TaIndice,'') <> '' AND TaAno = ${anoAtual} AND convert(int,TaMes) = ${mesAtual} order by TaAno Desc, TaMes Desc`,
+      { type: QueryTypes.SELECT }
+    )
+    .then((data) => {
+      if (!data || data.length == 0) {
+        console.log("Indice atual não encontrado");
+        indiceAntigo = 0;
+        return 0;
+      }
+      //encontrou registro, trato o mesmo
+      {
+        IndiceAtual = data[0].TaIndice;
+        if (indiceAntigo === 0) {
+          console.log("Indice atual = 0");
+          indiceAntigo = 0;
+          return 0;
+        }
+      }
+    })
+    .catch((err) => {
+      console.log("Erro indice atual: " + err.message);
+      return -1;
+    });
+  //fim indice atual
+
+  const IndiceFinal =
+    IndiceAtual.replace(",", ".") / indiceAntigo.replace(",", ".");
+
+  if (nomeIndice != "IPCA") return IndiceFinal;
+  else IndiceAtual;
 };

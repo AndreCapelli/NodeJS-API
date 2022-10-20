@@ -1,5 +1,6 @@
-const sequelize = require("sequelize");
-const db = require("../models");
+const db = require("../models/index");
+const sequelize = db.sequelize;
+const { QueryTypes } = require("sequelize");
 const Pessoas = db.pessoas;
 const Movimentacoes = db.movimentacoes;
 const Politicas = db.politicas;
@@ -16,6 +17,84 @@ const funcoes = require("../../funcoes_utils/funcoes/funcoes");
  * Os métodos chamados após a const Pessoa são nativos do Sequelize, na documentação terá a explicação de todos
  * o resto é apenas JS
  */
+
+exports.atualizaEmail = async (req, res) => {
+  var cpf = req.body.cpf;
+  var email = req.body.email;
+  var telefone = req.body.telefone;
+  var contato = req.body.contato;
+  var DDD;
+
+  console.log(contato);
+
+  if (!cpf) {
+    res
+      .status(406)
+      .json({ message: "Documento da pessoa nao pode ser vazio!" });
+    return;
+  }
+
+  if (!email && !telefone) {
+    res.status(406).json({ message: "Email e telefone nao informados!" });
+    return;
+  }
+
+  if (telefone.length > 11 || telefone.length < 8) {
+    res.status(406).json({ message: "Telefone de tamanho invalido!" });
+    return;
+  }
+
+  if (telefone.length === 11 || telefone.length === 10) {
+    DDD = telefone.substring(0, 2);
+    telefone = telefone.substring(2, 50);
+  }
+
+  var pessoa = await Pessoas.findAll({
+    where: {
+      [Op.or]: [{ JPesCNPJ: cpf }, { FPesCPF: cpf }],
+    },
+  })
+    .then((data) => {
+      if (data.length === 0) {
+        return res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
+      } else {
+        if (!contato) {
+          contato =
+            data[0].FPesNome === null
+              ? data[0].JPesRazaoSocial
+              : data[0].FPesNome;
+        }
+        return data[0];
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({
+        message: err.message + " Pessoa não localizada!",
+      });
+    });
+
+  async function insereContato() {
+    await sequelize
+      .query(
+        `INSERT INTO PessoasContatos (PesPessoasID, PesDDD, PesTelefone, PesEmail, PesOrigemContato, PesContato) 
+        Values (${pessoa.Pessoas_ID},'${DDD}', '${telefone}','${email}','Portal','${contato}') `,
+        {
+          type: QueryTypes.INSERT,
+        }
+      )
+      .catch((err) => {
+        res.status(500).json({
+          message: err.message + " Pessoa não localizada!",
+        });
+      });
+    return;
+  }
+
+  await insereContato();
+  res.status(200).send("Contato insereido com sucesso");
+  return;
+};
+
 exports.findOne = async (req, res) => {
   if (!req.params.Documento) {
     resclea
@@ -34,7 +113,7 @@ exports.findOne = async (req, res) => {
   })
     .then((data) => {
       if (data.length === 0) {
-        res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
+        // return res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
         return { Vazio: "" };
       } else {
         return {
@@ -57,6 +136,11 @@ exports.findOne = async (req, res) => {
         message: err.message + " Algum erro aconteceu na busca do Devedor!",
       });
     });
+
+  if (pessoaDevedor.Vazio == "") {
+    res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
+    return;
+  }
 
   const devedorCredores = await Movimentacoes.findAll({
     where: {
@@ -129,7 +213,7 @@ exports.findOne = async (req, res) => {
         });
       });
 
-    console.log("Jhon" + politicas.PeDescricao);
+    console.log("Juros politica " + politicas.PeJuros);
 
     var docs = await Movimentacoes.findAll({
       where: {
@@ -157,66 +241,136 @@ exports.findOne = async (req, res) => {
         });
       });
 
-    var docsAtualizados = await docs.map(async (docs) => {
-      var indiceCorrecao = funcoes.RetornaIndiceTabela(
-        docs.MoDataVencimento,
-        politicas.PeTabelaIndicesEconomicosID,
-        docs.Movimentacoes_ID
-      );
+    var docsAtualizados = await Promise.all(
+      docs.map(async (docs) => {
+        var indiceCorrecao = await funcoes.RetornaIndiceTabela(
+          docs.MoDataVencimento,
+          politicas.PeTabelaIndicesEconomicosID,
+          docs.Movimentacoes_ID
+        );
 
-      console.log(indiceCorrecao.TaIndice);
-      return {
-        Movimentacoes_ID: docs.Movimentacoes_ID,
-        MoInadimplentesID: docs.MoInadimplentesID,
-        MoClientesID: docs.MoClientesID,
-        MoValorDocumento: docs.MoValorDocumento,
-        MoDiasAtraso: funcoes.CalculaDias(
-          funcoes.ArrumaData(docs.MoDataVencimento),
-          funcoes.RetornaData()
-        ),
-        MoValorJuros: calculos.CalculaJuros(
-          docs.MoValorDocumento,
-          politicas.PeJuros,
-          funcoes.CalculaDias(
-            funcoes.ArrumaData(docs.MoDataVencimento),
-            funcoes.RetornaData()
-          ),
-          politicas.PeTipoJuros == "" ? "S" : politicas.PeTipoJuros
-        ),
-        MoValorMulta: calculos.CalculaMulta(
-          docs.MoValorDocumento,
-          politicas.PeMulta
-        ),
-        MoValorCorrecao: 0,
-        MoValorHonorarios: calculos.CalculaHonorarios(
-          docs.MoValorDocumento,
-          docs.MoPercentualHonorarios
-        ),
-        MoValorDocumentoAtualizado:
-          docs.MoValorDocumento +
+        let ValorCorrecaoReal = parseFloat(
+          calculos.CalculaCorrecao(docs.MoValorDocumento, indiceCorrecao)
+        );
+
+        let ValorJurosReal = parseFloat(
           calculos.CalculaJuros(
-            docs.MoValorDocumento,
-            docs.MoPercentualJuros,
+            docs.MoValorDocumento +
+              (politicas.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0),
+            politicas.PeJuros,
             funcoes.CalculaDias(
               funcoes.ArrumaData(docs.MoDataVencimento),
               funcoes.RetornaData()
             ),
-            "S"
-          ) +
-          calculos.CalculaMulta(docs.MoValorDocumento, docs.MoPercentualMulta) +
-          calculos.CalculaCorrecao(
-            docs.MoValorDocumento,
-            docs.MoPercentualCorrecao
-          ) +
-          calculos.CalculaHonorarios(
-            docs.MoValorDocumento,
-            docs.MoPercentualHonorarios
+            politicas.PeTipoJuros == "" ? "S" : politicas.PeTipoJuros
+          )
+        );
+
+        let ValorMultaReal = parseFloat(
+          calculos.CalculaMulta(
+            docs.MoValorDocumento + ValorCorrecaoReal,
+            politicas.PeMulta
+          )
+        );
+
+        let MoValorAtualizadoSemHonorario =
+          docs.MoValorDocumento +
+          ValorJurosReal +
+          ValorMultaReal +
+          ValorCorrecaoReal;
+
+        if (politicas.PeHonorarioSobVA) {
+          var ValorHonorarioReal = parseFloat(
+            calculos.CalculaHonorarios(
+              MoValorAtualizadoSemHonorario,
+              politicas.PeHonorario
+            )
+          );
+        } else {
+          var ValorHonorarioReal = parseFloat(
+            calculos.CalculaHonorarios(
+              docs.MoValorDocumento,
+              politicas.PeHonorario
+            )
+          );
+        }
+
+        let ValorHonorariosSobJuros =
+          politicas.PeAplicaHonorario_Juros == true
+            ? parseFloat(
+                calculos.CalculaHonorarios(
+                  ValorJurosReal,
+                  politicas.PeHonorario
+                )
+              )
+            : 0;
+
+        let ValorHonorarioSobMulta =
+          politicas.PeAplicaHonorario_Multa == true
+            ? parseFloat(
+                calculos.CalculaHonorarios(
+                  ValorMultaReal,
+                  politicas.PeHonorario
+                )
+              )
+            : 0;
+
+        let ValorHonorarioSobCorrecao =
+          politicas.PeAplicaHonorario_Correcao == true
+            ? parseFloat(
+                calculos.CalculaHonorarios(
+                  ValorCorrecaoReal,
+                  politicas.PeHonorario
+                )
+              )
+            : 0;
+
+        let ValorHonorarioRealTotal =
+          ValorHonorarioReal +
+          ValorHonorarioSobCorrecao +
+          ValorHonorarioSobMulta +
+          ValorHonorariosSobJuros;
+
+        let ValorAtualizadoTotal =
+          docs.MoValorDocumento +
+          ValorJurosReal +
+          ValorMultaReal +
+          ValorCorrecaoReal +
+          ValorHonorarioRealTotal;
+
+        return {
+          Movimentacoes_ID: docs.Movimentacoes_ID,
+          MoInadimplentesID: docs.MoInadimplentesID,
+          MoClientesID: docs.MoClientesID,
+          MoValorDocumento: docs.MoValorDocumento,
+          MoCorrecaoIndice: indiceCorrecao,
+          MoValorCorrecao: ValorCorrecaoReal,
+          MoDiasAtraso: funcoes.CalculaDias(
+            funcoes.ArrumaData(docs.MoDataVencimento),
+            funcoes.RetornaData()
           ),
-        MoDataVencimento: docs.MoDataVencimento,
-        MoNumeroDocumento: docs.MoNumeroDocumento,
-        MoTipoDocumento: docs.MoTipoDocumento,
-      };
-    });
+          MoJurosPorcentagem: politicas.PeJuros,
+          MoValorJuros: ValorJurosReal,
+          MoPorcentagemMulta: politicas.PeMulta,
+          MoValorMulta: ValorMultaReal,
+          MoValorAtualizadoSemHonorario:
+            docs.MoValorDocumento +
+            ValorJurosReal +
+            ValorMultaReal +
+            ValorCorrecaoReal,
+          MoHonorariosPorcentagem: politicas.PeHonorario,
+          MoValorHonorarios: ValorHonorarioReal,
+          MoValorHonorarioSobJuros: ValorHonorariosSobJuros,
+          MoValorHonorarioSobMulta: ValorHonorarioSobMulta,
+          MoValorHonorarioSobCorrecao: ValorHonorarioSobCorrecao,
+          MoValorHonorarioTotal: ValorHonorarioRealTotal,
+          MoValorAtualizado: ValorAtualizadoTotal.toFixed(2),
+          MoDataVencimento: docs.MoDataVencimento,
+          MoNumeroDocumento: docs.MoNumeroDocumento,
+          MoTipoDocumento: docs.MoTipoDocumento,
+        };
+      })
+    );
 
     var atualizaDocs = await docsAtualizados.map((docs) => {
       return docs.MoValorDocumento;

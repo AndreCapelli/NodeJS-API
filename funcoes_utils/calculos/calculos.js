@@ -15,7 +15,9 @@ exports.CalcValorTotalParcela = CalcValorTotalParcela;
 exports.CalculaJuros = (Valor, Juros, Dias, Tipo) => {
   let li, nDias, vJuros;
 
-  console.log("Valor: " + Valor + " Juros: " + Juros + " DIas: " + Dias);
+  console.log(
+    "Valor: " + Valor + " Juros: " + Juros + " Dias: " + Dias + "Tipo: " + Tipo
+  );
 
   if (Tipo == "C") {
     li = Juros / 100;
@@ -37,11 +39,14 @@ exports.CalculaMulta = (Valor, Multa) => {
 };
 
 exports.CalculaCorrecao = (Valor, Correcao) => {
-  return Valor * Correcao == 0 ? 1 : Correcao - Valor;
+  console.log(Valor);
+  const Resultado = Valor * Correcao == 0 ? 1 : Valor * Correcao - Valor;
+  return Resultado.toFixed(2);
 };
 
 exports.CalculaHonorarios = (Valor, Honorarios) => {
-  return (Valor / 100) * Honorarios;
+  var Retorno = (Valor / 100) * Honorarios;
+  return Retorno.toFixed(2);
 };
 
 exports.CalculaACI = (VAI, VO) => {

@@ -3,6 +3,7 @@ module.exports = (app) => {
   const router = require("express").Router();
 
   router.get("/buscaCredor/:Documento", pessoa.findOne);
+  router.post("/atualizaEmail/", pessoa.atualizaEmail);
 
   app.use("/portal", router);
 };
