@@ -256,7 +256,7 @@ exports.findDoc = (req, res) => {
                 data.PesEstrelaRotasID
               )
                 .then((dataRota) => {
-                  return dataRota.InNomeSub;
+                  return dataRota.EsNome;
                 })
                 .catch((err) => {
                   return { EsNome: "Vazio" };
@@ -327,7 +327,7 @@ exports.findDoc = (req, res) => {
             }
           })
           .catch((err) => {
-            return res.status(500).json(err);
+            return res.status(500).json({ erro: err.message });
           });
       }
     })
