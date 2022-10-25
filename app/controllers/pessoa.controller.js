@@ -234,7 +234,7 @@ exports.findDoc = (req, res) => {
                 data.PesIntegracoesEstrelaUnidadesID
               )
                 .then((dataUni) => {
-                  return dataUni.InNome;
+                  return { InNome: dataUni.InNome };
                 })
                 .catch((err) => {
                   return {
@@ -246,7 +246,7 @@ exports.findDoc = (req, res) => {
                 data.PesIntegracoesEstrelaSUBUnidadesID
               )
                 .then((dataSubUni) => {
-                  return dataSubUni.InNomeSub;
+                  return { InNomeSub: dataSubUni.InNomeSub };
                 })
                 .catch((err) => {
                   return { InNomeSub: "Vazio" };
@@ -256,7 +256,7 @@ exports.findDoc = (req, res) => {
                 data.PesEstrelaRotasID
               )
                 .then((dataRota) => {
-                  return dataRota.EsNome;
+                  return { EsNome: dataRota.EsNome };
                 })
                 .catch((err) => {
                   return { EsNome: "Vazio" };
