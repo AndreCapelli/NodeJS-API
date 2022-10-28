@@ -100,18 +100,24 @@ exports.create = (req, res) => {
 
       const PessoasID = data.Pessoas_ID;
 
-      let contatos = req.body.contatosCadastro.map(function (ct) {
-        var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
-        var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
+      let contatos;
 
-        return {
-          PesPessoasID: PessoasID,
-          PesContato: ct.PesContato,
-          PesDDD: ddd,
-          PesTelefone: telefone,
-          PesEmail: ct.PesEmail,
-        };
-      });
+      if (req.body["contatosCadastro"]) {
+        contatos = req.body.contatosCadastro.map(function (ct) {
+          var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
+          var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
+
+          return {
+            PesPessoasID: PessoasID,
+            PesContato: ct.PesContato,
+            PesDDD: ddd,
+            PesTelefone: telefone,
+            PesEmail: ct.PesEmail,
+          };
+        });
+      } else {
+        contatos = {};
+      }
 
       Telefone.bulkCreate(contatos, { individualHooks: true })
         .then((dataContatos) => {
