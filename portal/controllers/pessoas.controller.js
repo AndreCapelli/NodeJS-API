@@ -25,7 +25,7 @@ exports.atualizaEmail = async (req, res) => {
   var contato = req.body.contato;
   var DDD;
 
-  console.log(contato);
+  console.log(req.body.cpf);
 
   if (!cpf) {
     res
