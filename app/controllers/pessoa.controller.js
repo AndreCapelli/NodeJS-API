@@ -100,18 +100,24 @@ exports.create = (req, res) => {
 
       const PessoasID = data.Pessoas_ID;
 
-      let contatos = req.body.contatosCadastro.map(function (ct) {
-        var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
-        var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
+      let contatos;
 
-        return {
-          PesPessoasID: PessoasID,
-          PesContato: ct.PesContato,
-          PesDDD: ddd,
-          PesTelefone: telefone,
-          PesEmail: ct.PesEmail,
-        };
-      });
+      if (req.body["contatosCadastro"]) {
+        contatos = req.body.contatosCadastro.map(function (ct) {
+          var ddd = ct.PesTelefone.replace(/\s+/g, "").substring(0, 2);
+          var telefone = ct.PesTelefone.replace(/\s+/g, "").substring(2);
+
+          return {
+            PesPessoasID: PessoasID,
+            PesContato: ct.PesContato,
+            PesDDD: ddd,
+            PesTelefone: telefone,
+            PesEmail: ct.PesEmail,
+          };
+        });
+      } else {
+        contatos = {};
+      }
 
       Telefone.bulkCreate(contatos, { individualHooks: true })
         .then((dataContatos) => {
@@ -129,7 +135,7 @@ exports.create = (req, res) => {
           }
         })
         .catch((err) => {
-          res.status(500).send({ message: err.message || "Algo errado" });
+          res.status(500).send({ message: err.message + " Algo errado" });
         });
     })
     .catch((err) => {
@@ -234,7 +240,7 @@ exports.findDoc = (req, res) => {
                 data.PesIntegracoesEstrelaUnidadesID
               )
                 .then((dataUni) => {
-                  return dataUni.InNome;
+                  return { InNome: dataUni.InNome };
                 })
                 .catch((err) => {
                   return {
@@ -246,7 +252,7 @@ exports.findDoc = (req, res) => {
                 data.PesIntegracoesEstrelaSUBUnidadesID
               )
                 .then((dataSubUni) => {
-                  return dataSubUni.InNomeSub;
+                  return { InNomeSub: dataSubUni.InNomeSub };
                 })
                 .catch((err) => {
                   return { InNomeSub: "Vazio" };
@@ -256,7 +262,7 @@ exports.findDoc = (req, res) => {
                 data.PesEstrelaRotasID
               )
                 .then((dataRota) => {
-                  return dataRota.InNomeSub;
+                  return { EsNome: dataRota.EsNome };
                 })
                 .catch((err) => {
                   return { EsNome: "Vazio" };
@@ -327,7 +333,7 @@ exports.findDoc = (req, res) => {
             }
           })
           .catch((err) => {
-            return res.status(500).json(err);
+            return res.status(500).json({ erro: err.message });
           });
       }
     })
