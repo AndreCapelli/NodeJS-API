@@ -536,7 +536,10 @@ exports.pessoaML = async (req, res) => {
       let resultTelefone = await connFilial
         .query(
           `INSERT INTO PessoasContatos(PesPessoasID, PesDDD, PesTelefone)
-    VALUES(${resultPessoa[0].Pessoas_ID}, '${dt.PesDDD}', '${dt.PesTelefone}')`
+    VALUES(${resultPessoa[0].Pessoas_ID}, '${dt.PesDDD}', '${dt.PesTelefone}')`,
+          {
+            type: QueryTypes.INSERT,
+          }
         )
         .then((data) => {
           return data[0];

@@ -3,7 +3,7 @@ module.exports = (app) => {
   const router = require("express").Router();
 
   //Faz a comparação do usuário para Login
-  router.get("/login/:User&:Pass", usuario.login);
+  router.get("/login/:filialID/:User&:Pass", usuario.login);
 
   // Create a new Usuario
   router.post("/", usuario.create);
