@@ -87,6 +87,12 @@ module.exports = (sequelize, Sequelize) => {
       PesIDImgApp: {
         type: Sequelize.STRING,
       },
+      PesOrigensID: {
+        type: Sequelize.STRING,
+      },
+      PesConsultorID: {
+        type: Sequelize.STRING,
+      },
     },
     {
       // Abaixo são os campos de tempo/ hora nativos do Sequelize

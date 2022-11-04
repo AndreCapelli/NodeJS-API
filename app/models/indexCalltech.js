@@ -1,14 +1,15 @@
+const dbConfig = require("../config/dbCalltech.config.js");
 const Sequelize = require("sequelize");
 
-const sequelize = new Sequelize("Calltech_Oficial", "sa", "NAQfed24086", {
-  host: "200.150.198.251",
-  port: "1433",
-  dialect: "mssql",
+const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
+  host: dbConfig.HOST,
+  port: dbConfig.PORT,
+  dialect: dbConfig.dialect,
   pool: {
-    max: 15,
-    min: 0,
-    acquire: 30000,
-    idle: 10000,
+    max: dbConfig.pool.max,
+    min: dbConfig.pool.min,
+    acquire: dbConfig.pool.acquire,
+    idle: dbConfig.pool.idle,
   },
   dialectOptions: {
     useUTC: false, // for reading from database

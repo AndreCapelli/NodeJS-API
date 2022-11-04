@@ -65,6 +65,9 @@ module.exports = (sequelize, Sequelize) => {
       PeCustasAcordo: {
         type: Sequelize.DOUBLE,
       },
+      PeComboPortal: {
+        type: Sequelize.BOOLEAN,
+      },
     },
     {
       timestamps: false,

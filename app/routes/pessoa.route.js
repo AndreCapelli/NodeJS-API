@@ -14,6 +14,9 @@ module.exports = (app) => {
   //   // Delete uma pessoa por algum parametro :id (id no caso é apenas nomenclatura na hora de pegar esse valor)
   //   router.delete("/:id", pessoa.delete);
 
+  router.post("/ml/:filialID", pessoa.pessoaML);
+  router.get("/ml/origens", pessoa.origens);
+  router.get("/ml/consultores", pessoa.consultores);
   /**
    * Declarar o use para identificar qual o endpoint completo dessa URL, no caso de Pessoas é
    * {URL_servidor}:{Porta}/api/pessoas e o resto é complementar ao que está feito acima ^^

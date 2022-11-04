@@ -1,10 +1,12 @@
-const sequelize = require("sequelize");
+const Sequelize = require("sequelize");
 const db = require("../models");
+const sequelize = db.sequelize;
 const Pessoa = db.pessoas;
 const Telefone = db.telefones;
 const UnidadeEstrela = db.unidadesEstrela;
 const SubUnidadesEstrela = db.subUnidadesEstrela;
 const RotaEstrela = db.rotaEstrela;
+const { QueryTypes } = require("sequelize");
 const Op = db.Sequelize.Op;
 
 /**
@@ -461,4 +463,89 @@ exports.update = async (req, res) => {
         message: "Xuparacada",
       });
     });
+};
+
+exports.pessoaML = async (req, res) => {
+  // if (!req.params.filialID) {
+  //   res.send(406).json({ message: "Necessário informar a filial" });
+  //   return;
+  // }
+
+  // req.body.map((dt) => {
+  //   let pessoa = {
+  //     FPesNome: dt.PesNome,
+  //     PesOrigensID: dt.PesOrigem,
+  //     PesConsultorID: dt.PesConsultor,
+  //     PesUsuarioCadastrouID: dt.PesUsuarioCadastrouID,
+  //   };
+
+  //   let resultPessoa = sequelize
+  //     .query(`INSERT INTO #TABLE#() VALUES()`)
+  //     .then((data) => {return data});
+
+  //   if (resultPessoa.Pessoas_ID == 0) {
+  //     return;
+  //   }
+  // });
+
+  // Telefone.create(2)
+  //   .then((data) => {
+  //     return data;
+  //   })
+  //   .catch((err) => {
+  //     return { PessoasContatos_ID: 0 };
+  //   });
+
+  let resultPessoa = await sequelize
+    .query(`INSERT INTO Pessoas(FPesNome) VALUES('${req.body.PesNome}')`, {
+      type: QueryTypes.INSERT,
+    })
+    .then((data, created) => {
+      console.log(data);
+      console.log(created);
+      return data[0];
+    })
+    .catch((err) => {
+      return err;
+    });
+
+  const teste = await resultPessoa.map((dt) => {
+    return { Pessoas_ID: dt };
+  });
+
+  console.log(teste);
+  res.status(200).json(resultPessoa);
+};
+
+exports.origens = async (req, res) => {
+  const origens = await sequelize
+    .query("SELECT Origens_ID, OrNome FROM Origens WITH(NOLOCK)", {
+      type: QueryTypes.SELECT,
+    })
+    .then((data) => {
+      return data;
+    })
+    .catch((err) => {
+      return { Origens_ID: 0 };
+    });
+
+  res.status(200).json(origens);
+};
+
+exports.consultores = async (req, res) => {
+  const consultores = await sequelize
+    .query(
+      "SELECT Usuarios_ID, UsNome FROM Usuarios WITH(NOLOCK) WHERE UsAtivo = 1",
+      {
+        type: QueryTypes.SELECT,
+      }
+    )
+    .then((data) => {
+      return data;
+    })
+    .catch((err) => {
+      return { Usuarios_ID: 0 };
+    });
+
+  res.status(200).json(consultores);
 };
