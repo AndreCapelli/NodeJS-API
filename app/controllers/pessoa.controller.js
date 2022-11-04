@@ -9,6 +9,9 @@ const RotaEstrela = db.rotaEstrela;
 const { QueryTypes } = require("sequelize");
 const Op = db.Sequelize.Op;
 
+const dbCall = require("../models/indexCalltech");
+const sequelizeCall = dbCall.sequelize;
+
 /**
  * Exports. para sempre "exportar" o resultado do que acontecer
  * A próxima palavra é sempre o que foi declarado nas routas, ou seja, é sua função que é chamada
@@ -518,6 +521,11 @@ exports.pessoaML = async (req, res) => {
 };
 
 exports.origens = async (req, res) => {
+  // if (!req.params.filialID) {
+  //   res.send(406).json({ message: "Necessário informar a filial" });
+  //   return;
+  // }
+
   const origens = await sequelize
     .query("SELECT Origens_ID, OrNome FROM Origens WITH(NOLOCK)", {
       type: QueryTypes.SELECT,
@@ -533,6 +541,10 @@ exports.origens = async (req, res) => {
 };
 
 exports.consultores = async (req, res) => {
+  // if (!req.params.filialID) {
+  //   res.send(406).json({ message: "Necessário informar a filial" });
+  //   return;
+  // }
   const consultores = await sequelize
     .query(
       "SELECT Usuarios_ID, UsNome FROM Usuarios WITH(NOLOCK) WHERE UsAtivo = 1",
@@ -548,4 +560,74 @@ exports.consultores = async (req, res) => {
     });
 
   res.status(200).json(consultores);
+};
+
+exports.encontraFilial = async (req, res) => {
+  if (!req.params.filialID) {
+    res.send(406).json({ message: "Necessário informar a filial" });
+    return;
+  }
+
+  const filial = await sequelizeCall
+    .query(
+      `SELECT PePessoasFiliaisID, PeCloudServidor, PeCloudBase, PePassWordBase, PeCloudUsuario
+      FROM PessoasContratos WITH(NOLOCK)
+      WHERE PePessoasFiliaisID = ${req.params.filialID}`,
+      { type: QueryTypes.SELECT }
+    )
+    .then((data) => {
+      return data[0];
+    })
+    .catch((err) => {
+      return { PePessoasFiliaisID: 0 };
+    });
+
+  if (filial.PePassWordBase == null || filial.PePessoasFiliaisID == 0) {
+    res.status(406).send({ menssage: "Não foi possível se conectar a filial" });
+    return;
+  }
+
+  const connFilial = new Sequelize(
+    filial.PeCloudBase,
+    filial.PeCloudUsuario,
+    filial.PePassWordBase,
+    {
+      host:
+        filial.PeCloudServidor == "10.100.19.127"
+          ? "node68404-cliente.jelastic.saveincloud.net"
+          : filial.PeCloudServidor,
+      port: filial.PeCloudServidor == "10.100.19.127" ? "11051" : "1433",
+      dialect: "mssql",
+      pool: {
+        max: 15,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+    }
+  );
+
+  const buscaBase = await connFilial
+    .query(
+      `SELECT ISNULL(CoModuloMaisLaser,0) CoModuloMaisLaser, 
+        ISNULL(CoParam_ModEstrela,0) CoParam_ModEstrela 
+        FROM ConfiguracoesSistemas WITH(NOLOCK)`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    )
+    .then((data) => {
+      return data[0].CoModuloMaisLaser == 0 ? { ModoApp: 0 } : { ModoApp: 1 };
+    })
+    .catch((err) => {
+      return { ModoApp: -1 };
+    });
+
+  const result = {
+    Filial_ID: filial.PePessoasFiliaisID,
+    ModoApp: buscaBase.ModoApp,
+    FilialNome: filial.PeCloudBase,
+  };
+
+  res.status(200).json(result);
 };

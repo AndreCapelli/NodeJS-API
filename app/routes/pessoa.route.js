@@ -17,6 +17,7 @@ module.exports = (app) => {
   router.post("/ml/:filialID", pessoa.pessoaML);
   router.get("/ml/origens/:filialID", pessoa.origens);
   router.get("/ml/consultores/:filialID", pessoa.consultores);
+  router.get("/ml/:filialID", pessoa.encontraFilial);
   /**
    * Declarar o use para identificar qual o endpoint completo dessa URL, no caso de Pessoas é
    * {URL_servidor}:{Porta}/api/pessoas e o resto é complementar ao que está feito acima ^^

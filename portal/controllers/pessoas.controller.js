@@ -6,8 +6,6 @@ const Movimentacoes = db.movimentacoes;
 const Politicas = db.politicas;
 const Op = db.Sequelize.Op;
 
-const Sequelize = require("sequelize");
-
 const calculos = require("../../funcoes_utils/calculos/calculos");
 const funcoes = require("../../funcoes_utils/funcoes/funcoes");
 
@@ -392,38 +390,7 @@ exports.findOne = async (req, res) => {
 };
 
 exports.buscaCombo = async (req, res) => {
-  // const combo = await Politicas.findAll({ where: { PeComboPortal: true } });
+  const combo = await Politicas.findAll({ where: { PeComboPortal: true } });
 
-  const combo = {
-    db: req.body.db,
-    user: req.body.user,
-    pw: req.body.pw,
-    host: req.body.host,
-    port: req.body.port,
-  };
-
-  const testaConn = new Sequelize(combo.db, combo.user, combo.pw, {
-    host: combo.host,
-    port: combo.port,
-    dialect: "mssql",
-    pool: {
-      max: 15,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-  });
-
-  const result = await testaConn
-    .query("Select * from Usuarios With(nolock)", {
-      type: QueryTypes.SELECT,
-    })
-    .then((data) => {
-      return data;
-    })
-    .catch((err) => {
-      return err.message;
-    });
-
-  res.status(200).json(result);
+  res.status(200).json(combo);
 };
