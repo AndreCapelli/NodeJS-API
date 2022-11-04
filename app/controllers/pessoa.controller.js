@@ -521,12 +521,51 @@ exports.pessoaML = async (req, res) => {
 };
 
 exports.origens = async (req, res) => {
-  // if (!req.params.filialID) {
-  //   res.send(406).json({ message: "Necessário informar a filial" });
-  //   return;
-  // }
+  if (!req.params.filialID) {
+    res.send(406).json({ message: "Necessário informar a filial" });
+    return;
+  }
 
-  const origens = await sequelize
+  const filial = await sequelizeCall
+    .query(
+      `SELECT PePessoasFiliaisID, PeCloudServidor, PeCloudBase, PePassWordBase, PeCloudUsuario
+      FROM PessoasContratos WITH(NOLOCK)
+      WHERE PePessoasFiliaisID = ${req.params.filialID}`,
+      { type: QueryTypes.SELECT }
+    )
+    .then((data) => {
+      return data[0];
+    })
+    .catch((err) => {
+      return { PePessoasFiliaisID: 0 };
+    });
+
+  if (filial.PePassWordBase == null || filial.PePessoasFiliaisID == 0) {
+    res.status(406).send({ menssage: "Não foi possível se conectar a filial" });
+    return;
+  }
+
+  const connFilial = new Sequelize(
+    filial.PeCloudBase,
+    filial.PeCloudUsuario,
+    filial.PePassWordBase,
+    {
+      host:
+        filial.PeCloudServidor == "10.100.19.127"
+          ? "node68404-cliente.jelastic.saveincloud.net"
+          : filial.PeCloudServidor,
+      port: filial.PeCloudServidor == "10.100.19.127" ? "11051" : "1433",
+      dialect: "mssql",
+      pool: {
+        max: 15,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+    }
+  );
+
+  const origens = await connFilial
     .query("SELECT Origens_ID, OrNome FROM Origens WITH(NOLOCK)", {
       type: QueryTypes.SELECT,
     })
@@ -541,11 +580,51 @@ exports.origens = async (req, res) => {
 };
 
 exports.consultores = async (req, res) => {
-  // if (!req.params.filialID) {
-  //   res.send(406).json({ message: "Necessário informar a filial" });
-  //   return;
-  // }
-  const consultores = await sequelize
+  if (!req.params.filialID) {
+    res.send(406).json({ message: "Necessário informar a filial" });
+    return;
+  }
+
+  const filial = await sequelizeCall
+    .query(
+      `SELECT PePessoasFiliaisID, PeCloudServidor, PeCloudBase, PePassWordBase, PeCloudUsuario
+      FROM PessoasContratos WITH(NOLOCK)
+      WHERE PePessoasFiliaisID = ${req.params.filialID}`,
+      { type: QueryTypes.SELECT }
+    )
+    .then((data) => {
+      return data[0];
+    })
+    .catch((err) => {
+      return { PePessoasFiliaisID: 0 };
+    });
+
+  if (filial.PePassWordBase == null || filial.PePessoasFiliaisID == 0) {
+    res.status(406).send({ menssage: "Não foi possível se conectar a filial" });
+    return;
+  }
+
+  const connFilial = new Sequelize(
+    filial.PeCloudBase,
+    filial.PeCloudUsuario,
+    filial.PePassWordBase,
+    {
+      host:
+        filial.PeCloudServidor == "10.100.19.127"
+          ? "node68404-cliente.jelastic.saveincloud.net"
+          : filial.PeCloudServidor,
+      port: filial.PeCloudServidor == "10.100.19.127" ? "11051" : "1433",
+      dialect: "mssql",
+      pool: {
+        max: 15,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+    }
+  );
+
+  const consultores = await connFilial
     .query(
       "SELECT Usuarios_ID, UsNome FROM Usuarios WITH(NOLOCK) WHERE UsAtivo = 1",
       {
