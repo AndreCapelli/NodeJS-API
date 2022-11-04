@@ -469,55 +469,85 @@ exports.update = async (req, res) => {
 };
 
 exports.pessoaML = async (req, res) => {
-  // if (!req.params.filialID) {
-  //   res.send(406).json({ message: "Necessário informar a filial" });
-  //   return;
-  // }
+  if (!req.params.filialID) {
+    res.send(406).json({ message: "Necessário informar a filial" });
+    return;
+  }
 
-  // req.body.map((dt) => {
-  //   let pessoa = {
-  //     FPesNome: dt.PesNome,
-  //     PesOrigensID: dt.PesOrigem,
-  //     PesConsultorID: dt.PesConsultor,
-  //     PesUsuarioCadastrouID: dt.PesUsuarioCadastrouID,
-  //   };
-
-  //   let resultPessoa = sequelize
-  //     .query(`INSERT INTO #TABLE#() VALUES()`)
-  //     .then((data) => {return data});
-
-  //   if (resultPessoa.Pessoas_ID == 0) {
-  //     return;
-  //   }
-  // });
-
-  // Telefone.create(2)
-  //   .then((data) => {
-  //     return data;
-  //   })
-  //   .catch((err) => {
-  //     return { PessoasContatos_ID: 0 };
-  //   });
-
-  let resultPessoa = await sequelize
-    .query(`INSERT INTO Pessoas(FPesNome) VALUES('${req.body.PesNome}')`, {
-      type: QueryTypes.INSERT,
-    })
-    .then((data, created) => {
-      console.log(data);
-      console.log(created);
+  const filial = await sequelizeCall
+    .query(
+      `SELECT PePessoasFiliaisID, PeCloudServidor, PeCloudBase, PePassWordBase, PeCloudUsuario
+      FROM PessoasContratos WITH(NOLOCK)
+      WHERE PePessoasFiliaisID = ${req.params.filialID}`,
+      { type: QueryTypes.SELECT }
+    )
+    .then((data) => {
       return data[0];
     })
     .catch((err) => {
-      return err;
+      return { PePessoasFiliaisID: 0 };
     });
 
-  const teste = await resultPessoa.map((dt) => {
-    return { Pessoas_ID: dt };
-  });
+  if (filial.PePassWordBase == null || filial.PePessoasFiliaisID == 0) {
+    res.status(406).send({ menssage: "Não foi possível se conectar a filial" });
+    return;
+  }
 
-  console.log(teste);
-  res.status(200).json(resultPessoa);
+  const connFilial = new Sequelize(
+    filial.PeCloudBase,
+    filial.PeCloudUsuario,
+    filial.PePassWordBase,
+    {
+      host:
+        filial.PeCloudServidor == "10.100.19.127"
+          ? "node68404-cliente.jelastic.saveincloud.net"
+          : filial.PeCloudServidor,
+      port: filial.PeCloudServidor == "10.100.19.127" ? "11051" : "1433",
+      dialect: "mssql",
+      pool: {
+        max: 15,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+    }
+  );
+
+  await Promise.all(
+    req.body.map(async (dt) => {
+      let resultPessoa = await connFilial
+        .query(
+          `INSERT INTO Pessoas(FPesNome, PesOrigensID, PesConsultorID, PesUsuarioCadastrouID) 
+        VALUES('${dt.PesNome}', ${dt.PesOrigem}, ${dt.PesConsultor},
+        ${dt.PesUsuarioCadastrouID})
+        
+        SELECT IDENT_CURRENT('Pessoas') as Pessoas_ID`,
+          {
+            type: QueryTypes.INSERT,
+          }
+        )
+        .then((data) => {
+          return data[0];
+        })
+        .catch((err) => {
+          return err;
+        });
+
+      let resultTelefone = await connFilial
+        .query(
+          `INSERT INTO PessoasContatos(PesPessoasID, PesDDD, PesTelefone)
+    VALUES(${resultPessoa[0].Pessoas_ID}, '${dt.PesDDD}', '${dt.PesTelefone}')`
+        )
+        .then((data) => {
+          return data[0];
+        })
+        .catch((err) => {
+          return err;
+        });
+    })
+  );
+
+  res.status(200).send({ message: "Inseridos" });
 };
 
 exports.origens = async (req, res) => {
