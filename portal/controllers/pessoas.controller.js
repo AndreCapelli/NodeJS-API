@@ -97,7 +97,7 @@ exports.atualizaEmail = async (req, res) => {
 
 exports.findOne = async (req, res) => {
   if (!req.params.Documento) {
-    resclea
+    res
       .status(406)
       .send({ message: "Documento inválido, por favor preencha novamente!" });
     return;
@@ -222,7 +222,6 @@ exports.findOne = async (req, res) => {
         MoOrigemMovimentacao: {
           [Op.in]: ["I", "C"],
         },
-        MoValorDocumento: { [Op.ne]: 0.0 },
       },
       order: [
         ["MoInadimplentesID", "ASC"],
@@ -390,7 +389,257 @@ exports.findOne = async (req, res) => {
 };
 
 exports.buscaCombo = async (req, res) => {
-  const combo = await Politicas.findAll({ where: { PeComboPortal: true } });
+  if (!req.params.DocInad || !req.params.DocCli) {
+    res
+      .status(406)
+      .send({ message: "Documento inválido, por favor preencha novamente!" });
+    return;
+  }
+
+  const pessoaDevedor = await Pessoas.findAll({
+    where: {
+      [Op.or]: [
+        { JPesCNPJ: req.params.DocInad },
+        { FPesCPF: req.params.DocInad },
+      ],
+    },
+  })
+    .then((data) => {
+      if (data.length === 0) {
+        return { Vazio: "" };
+      } else {
+        return {
+          Pessoas_ID: data[0].Pessoas_ID,
+          DevedorNome:
+            data[0].PesTipoPessoa == "F"
+              ? data[0].FPesNome
+              : data[0].JPesRazaoSocial,
+          DevedorDocumento:
+            data[0].PesTipoPessoa == "F" ? data[0].FPesCPF : data[0].JPesCNPJ,
+          DevedorApelido:
+            data[0].PesTipoPessoa == "F"
+              ? data[0].FPesApelido
+              : data[0].JPesNomeFantasia,
+        };
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({
+        message: err.message + " Algum erro aconteceu na busca do Devedor!",
+      });
+    });
+
+  if (pessoaDevedor.Vazio == "") {
+    res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
+    return;
+  }
+
+  const pessoaCliente = await Pessoas.findAll({
+    where: {
+      [Op.or]: [
+        { JPesCNPJ: req.params.DocCli },
+        { FPesCPF: req.params.DocCli },
+      ],
+    },
+  })
+    .then((data) => {
+      if (data.length === 0) {
+        return { Vazio: "" };
+      } else {
+        return {
+          Pessoas_ID: data[0].Pessoas_ID,
+          CredorNome:
+            data[0].PesTipoPessoa == "F"
+              ? data[0].FPesNome
+              : data[0].JPesRazaoSocial,
+          CredorDocumento:
+            data[0].PesTipoPessoa == "F" ? data[0].FPesCPF : data[0].JPesCNPJ,
+          CredorApelido:
+            data[0].PesTipoPessoa == "F"
+              ? data[0].FPesApelido
+              : data[0].JPesNomeFantasia,
+        };
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({
+        message: err.message + " Algum erro aconteceu na busca do Credor!",
+      });
+    });
+
+  if (pessoaCliente.Vazio == "") {
+    res.status(406).send({ message: "Nenhum cliente encontrado!" });
+    return;
+  }
+
+  const docs = await Movimentacoes.findAll({
+    where: {
+      MoInadimplentesID: pessoaDevedor.Pessoas_ID,
+      MoClientesID: pessoaCliente.Pessoas_ID,
+      MoStatusMovimentacao: 0,
+      MoOrigemMovimentacao: {
+        [Op.in]: ["I", "C"],
+      },
+    },
+    order: [
+      ["MoInadimplentesID", "ASC"],
+      ["MoClientesID", "ASC"],
+      ["MoDataVencimento", "ASC"],
+    ],
+  })
+    .then((data) => {
+      return data;
+    })
+    .catch((err) => {
+      res.status(500).json({
+        message: err.message + " Algum erro aconteceu na busca dos Documentos!",
+      });
+    });
+
+  const combo = await Politicas.findAll({
+    where: { PeComboPortal: true, PePessoasID: pessoaCliente.Pessoas_ID },
+  })
+    .then((data) => {
+      return data;
+    })
+    .catch((err) => {
+      return { PessoasPoliticaCobrancas_ID: 0 };
+    });
+
+  if (combo.PessoasPoliticaCobrancas_ID)
+    if (combo.PessoasPoliticaCobrancas_ID == 0) {
+      res.status(406).send({ message: "Falha ao retornar as Políticas" });
+      return;
+    }
+
+  for (let index = 0; index < combo.length; index++) {
+    const element = combo[index];
+
+    var docsAtualizados = await Promise.all(
+      docs.map(async (docs) => {
+        var indiceCorrecao = await funcoes.RetornaIndiceTabela(
+          docs.MoDataVencimento,
+          element.PeTabelaIndicesEconomicosID,
+          docs.Movimentacoes_ID
+        );
+
+        let ValorCorrecaoReal = parseFloat(
+          calculos.CalculaCorrecao(docs.MoValorDocumento, indiceCorrecao)
+        );
+
+        let ValorJurosReal = parseFloat(
+          calculos.CalculaJuros(
+            docs.MoValorDocumento +
+              (element.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0),
+            element.PeJuros,
+            funcoes.CalculaDias(
+              funcoes.ArrumaData(docs.MoDataVencimento),
+              funcoes.RetornaData()
+            ),
+            element.PeTipoJuros == "" ? "S" : element.PeTipoJuros
+          )
+        );
+
+        let ValorMultaReal = parseFloat(
+          calculos.CalculaMulta(
+            docs.MoValorDocumento + ValorCorrecaoReal,
+            element.PeMulta
+          )
+        );
+
+        let MoValorAtualizadoSemHonorario =
+          docs.MoValorDocumento +
+          ValorJurosReal +
+          ValorMultaReal +
+          ValorCorrecaoReal;
+
+        if (element.PeHonorarioSobVA) {
+          var ValorHonorarioReal = parseFloat(
+            calculos.CalculaHonorarios(
+              MoValorAtualizadoSemHonorario,
+              element.PeHonorario
+            )
+          );
+        } else {
+          var ValorHonorarioReal = parseFloat(
+            calculos.CalculaHonorarios(
+              docs.MoValorDocumento,
+              element.PeHonorario
+            )
+          );
+        }
+
+        let ValorHonorariosSobJuros =
+          element.PeAplicaHonorario_Juros == true
+            ? parseFloat(
+                calculos.CalculaHonorarios(ValorJurosReal, element.PeHonorario)
+              )
+            : 0;
+
+        let ValorHonorarioSobMulta =
+          element.PeAplicaHonorario_Multa == true
+            ? parseFloat(
+                calculos.CalculaHonorarios(ValorMultaReal, element.PeHonorario)
+              )
+            : 0;
+
+        let ValorHonorarioSobCorrecao =
+          element.PeAplicaHonorario_Correcao == true
+            ? parseFloat(
+                calculos.CalculaHonorarios(
+                  ValorCorrecaoReal,
+                  element.PeHonorario
+                )
+              )
+            : 0;
+
+        let ValorHonorarioRealTotal =
+          ValorHonorarioReal +
+          ValorHonorarioSobCorrecao +
+          ValorHonorarioSobMulta +
+          ValorHonorariosSobJuros;
+
+        let ValorAtualizadoTotal =
+          docs.MoValorDocumento +
+          ValorJurosReal +
+          ValorMultaReal +
+          ValorCorrecaoReal +
+          ValorHonorarioRealTotal;
+
+        return {
+          Movimentacoes_ID: docs.Movimentacoes_ID,
+          MoInadimplentesID: docs.MoInadimplentesID,
+          MoClientesID: docs.MoClientesID,
+          MoValorDocumento: docs.MoValorDocumento,
+          MoCorrecaoIndice: indiceCorrecao,
+          MoValorCorrecao: ValorCorrecaoReal,
+          MoDiasAtraso: funcoes.CalculaDias(
+            funcoes.ArrumaData(docs.MoDataVencimento),
+            funcoes.RetornaData()
+          ),
+          MoJurosPorcentagem: element.PeJuros,
+          MoValorJuros: ValorJurosReal,
+          MoPorcentagemMulta: element.PeMulta,
+          MoValorMulta: ValorMultaReal,
+          MoValorAtualizadoSemHonorario:
+            docs.MoValorDocumento +
+            ValorJurosReal +
+            ValorMultaReal +
+            ValorCorrecaoReal,
+          MoHonorariosPorcentagem: element.PeHonorario,
+          MoValorHonorarios: ValorHonorarioReal,
+          MoValorHonorarioSobJuros: ValorHonorariosSobJuros,
+          MoValorHonorarioSobMulta: ValorHonorarioSobMulta,
+          MoValorHonorarioSobCorrecao: ValorHonorarioSobCorrecao,
+          MoValorHonorarioTotal: ValorHonorarioRealTotal,
+          MoValorAtualizado: ValorAtualizadoTotal.toFixed(2),
+          MoDataVencimento: docs.MoDataVencimento,
+          MoNumeroDocumento: docs.MoNumeroDocumento,
+          MoTipoDocumento: docs.MoTipoDocumento,
+        };
+      })
+    );
+  }
 
   res.status(200).json(combo);
 };

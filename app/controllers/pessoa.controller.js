@@ -513,9 +513,9 @@ exports.pessoaML = async (req, res) => {
     }
   );
 
-  await Promise.all(
+  const result = await Promise.all(
     req.body.map(async (dt) => {
-      let resultPessoa = await connFilial
+      await connFilial
         .query(
           `INSERT INTO Pessoas(FPesNome, PesOrigensID, PesConsultorID, PesUsuarioCadastrouID) 
         VALUES('${dt.PesNome}', ${dt.PesOrigem}, ${dt.PesConsultor},
@@ -527,22 +527,22 @@ exports.pessoaML = async (req, res) => {
           }
         )
         .then((data) => {
-          return data[0];
-        })
-        .catch((err) => {
-          return err;
-        });
+          let resultPessoa = data[0];
 
-      let resultTelefone = await connFilial
-        .query(
-          `INSERT INTO PessoasContatos(PesPessoasID, PesDDD, PesTelefone)
-    VALUES(${resultPessoa[0].Pessoas_ID}, '${dt.PesDDD}', '${dt.PesTelefone}')`,
-          {
-            type: QueryTypes.INSERT,
-          }
-        )
-        .then((data) => {
-          return data[0];
+          connFilial
+            .query(
+              `INSERT INTO PessoasContatos(PesPessoasID, PesDDD, PesTelefone)
+                VALUES(${resultPessoa[0].Pessoas_ID}, '${dt.PesDDD}', '${dt.PesTelefone}')`,
+              {
+                type: QueryTypes.INSERT,
+              }
+            )
+            .then((data) => {
+              return data[0];
+            })
+            .catch((err) => {
+              return err;
+            });
         })
         .catch((err) => {
           return err;

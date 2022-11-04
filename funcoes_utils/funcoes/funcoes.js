@@ -101,15 +101,13 @@ exports.RetornaIndiceTabela = async (
         nomeIndice = "";
       }
       //encontrou registro, trato o mesmo
-      {
+      else {
         nomeIndice = data[0].TaNome;
       }
     })
     .catch((err) => {
       console.log("Erro ao capturar o nome do indice: " + err.message);
     });
-
-  console.log(nomeIndice);
 
   //indice antigo
   const tabelaIndiceantigo = await sequelize
@@ -126,7 +124,7 @@ exports.RetornaIndiceTabela = async (
         return 0;
       }
       //encontrou registro, trato o mesmo
-      {
+      else {
         indiceAntigo = data[0].TaIndice;
         if (indiceAntigo === 0) {
           console.log("Indice antigo = 0");
@@ -152,12 +150,13 @@ exports.RetornaIndiceTabela = async (
       if (!data || data.length == 0) {
         console.log("Indice atual não encontrado");
         indiceAntigo = 0;
+        IndiceAtual = 0;
         return 0;
       }
       //encontrou registro, trato o mesmo
-      {
+      else {
         IndiceAtual = data[0].TaIndice;
-        if (indiceAntigo === 0) {
+        if (indiceAntigo == 0) {
           console.log("Indice atual = 0");
           indiceAntigo = 0;
           return 0;
@@ -169,6 +168,8 @@ exports.RetornaIndiceTabela = async (
       return -1;
     });
   //fim indice atual
+
+  if (IndiceAtual == 0) return 0;
 
   const IndiceFinal =
     IndiceAtual.replace(",", ".") / indiceAntigo.replace(",", ".");

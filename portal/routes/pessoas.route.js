@@ -4,7 +4,7 @@ module.exports = (app) => {
 
   router.get("/buscaCredor/:Documento", pessoa.findOne);
   router.post("/atualizaEmail/", pessoa.atualizaEmail);
-  router.get("/combo", pessoa.buscaCombo);
+  router.get("/combo/:DocInad&:DocCli", pessoa.buscaCombo);
 
   app.use("/portal", router);
 };
