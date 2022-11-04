@@ -1,6 +1,6 @@
 const db = require("../models/index");
 const sequelize = db.sequelize;
-const { QueryTypes } = require("sequelize");
+const { QueryTypes, json } = require("sequelize");
 const Pessoas = db.pessoas;
 const Movimentacoes = db.movimentacoes;
 const Politicas = db.politicas;
@@ -512,6 +512,12 @@ exports.buscaCombo = async (req, res) => {
       return;
     }
 
+  let jsonDocs = JSON.parse(JSON.stringify(pessoaDevedor));
+  jsonDocs["CredorID"] = pessoaCliente.Pessoas_ID;
+  jsonDocs["CredorNome"] = pessoaCliente.CredorNome;
+  jsonDocs["CredorDocumento"] = pessoaCliente.CredorDocumento;
+  jsonDocs["CredorApelido"] = pessoaCliente.CredorApelido;
+
   for (let index = 0; index < combo.length; index++) {
     const element = combo[index];
 
@@ -639,7 +645,17 @@ exports.buscaCombo = async (req, res) => {
         };
       })
     );
+
+    var atualizaDocs = await docsAtualizados.map((docs) => {
+      return docs.MoValorAtualizadoSemHonorario;
+    });
+
+    jsonDocs["PoliticaNome" + index] = element.PeDescricao;
+    jsonDocs["ValorAtualizado" + index] = atualizaDocs.reduce(
+      (a, b) => a + b,
+      0
+    );
   }
 
-  res.status(200).json(combo);
+  res.status(200).json(jsonDocs);
 };
