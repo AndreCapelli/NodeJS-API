@@ -143,7 +143,7 @@ exports.RetornaIndiceTabela = async (
   const tabelaIndiceAtual = await sequelize
     .query(
       `SELECT TOP 1 * FROM TabelaIndicesEconomicosMatriz T WITH(NOLOCK) 
-    WHERE TaIndicesEconomicosID = ${TabelaIndiceID} AND ISNULL(TaIndice,'') <> '' AND TaAno = ${anoAtual} AND convert(int,TaMes) = ${mesAtual} order by TaAno Desc, TaMes Desc`,
+    WHERE TaIndicesEconomicosID = ${TabelaIndiceID} AND ISNULL(TaIndice,'') <> '' AND TaAno = ${anoAtual} /*AND convert(int,TaMes) = ${mesAtual}*/ order by TaAno Desc, TaMes Desc`,
       { type: QueryTypes.SELECT }
     )
     .then((data) => {

@@ -1,6 +1,6 @@
 const db = require("../models/index");
 const sequelize = db.sequelize;
-const { QueryTypes, json } = require("sequelize");
+const { QueryTypes, json, IndexHints } = require("sequelize");
 const Pessoas = db.pessoas;
 const Movimentacoes = db.movimentacoes;
 const Politicas = db.politicas;
@@ -200,6 +200,7 @@ exports.findOne = async (req, res) => {
       where: {
         PePessoasID: dadosCredor.CredorID,
       },
+      order: [["PePoliticaPrincipal", "DESC"]],
     })
       .then((data) => {
         return data[0];
@@ -378,6 +379,7 @@ exports.findOne = async (req, res) => {
     testeJson["CredorNome" + index] = dadosCredor.CredorNome;
     testeJson["CredorDocumento" + index] = dadosCredor.CredorDocumento;
     testeJson["CredorApelido" + index] = dadosCredor.CredorApelido;
+    testeJson["Politica" + index] = politicas.PeDescricao;
     testeJson["ValorAtualizado" + index] = atualizaDocs.reduce(
       (a, b) => a + b,
       0
@@ -518,6 +520,8 @@ exports.buscaCombo = async (req, res) => {
   jsonDocs["CredorDocumento"] = pessoaCliente.CredorDocumento;
   jsonDocs["CredorApelido"] = pessoaCliente.CredorApelido;
 
+  var testeJson = [];
+
   for (let index = 0; index < combo.length; index++) {
     const element = combo[index];
 
@@ -612,50 +616,45 @@ exports.buscaCombo = async (req, res) => {
           ValorCorrecaoReal +
           ValorHonorarioRealTotal;
 
+        let Desconto = element.PeDescontoMaximoPercent;
+
+        console.log(Desconto);
+
+        if (Desconto > 0) {
+          var ValorFinal = (ValorAtualizadoTotal * Desconto) / 100;
+        }
+
         return {
-          Movimentacoes_ID: docs.Movimentacoes_ID,
-          MoInadimplentesID: docs.MoInadimplentesID,
-          MoClientesID: docs.MoClientesID,
-          MoValorDocumento: docs.MoValorDocumento,
-          MoCorrecaoIndice: indiceCorrecao,
-          MoValorCorrecao: ValorCorrecaoReal,
-          MoDiasAtraso: funcoes.CalculaDias(
-            funcoes.ArrumaData(docs.MoDataVencimento),
-            funcoes.RetornaData()
-          ),
-          MoJurosPorcentagem: element.PeJuros,
-          MoValorJuros: ValorJurosReal,
-          MoPorcentagemMulta: element.PeMulta,
-          MoValorMulta: ValorMultaReal,
-          MoValorAtualizadoSemHonorario:
-            docs.MoValorDocumento +
-            ValorJurosReal +
-            ValorMultaReal +
-            ValorCorrecaoReal,
-          MoHonorariosPorcentagem: element.PeHonorario,
-          MoValorHonorarios: ValorHonorarioReal,
-          MoValorHonorarioSobJuros: ValorHonorariosSobJuros,
-          MoValorHonorarioSobMulta: ValorHonorarioSobMulta,
-          MoValorHonorarioSobCorrecao: ValorHonorarioSobCorrecao,
-          MoValorHonorarioTotal: ValorHonorarioRealTotal,
-          MoValorAtualizado: ValorAtualizadoTotal.toFixed(2),
-          MoDataVencimento: docs.MoDataVencimento,
-          MoNumeroDocumento: docs.MoNumeroDocumento,
-          MoTipoDocumento: docs.MoTipoDocumento,
+          ValorFinal: parseFloat(ValorFinal.toFixed(2)),
+          ValorTotal: ValorAtualizadoTotal,
         };
       })
     );
 
     var atualizaDocs = await docsAtualizados.map((docs) => {
-      return docs.MoValorAtualizadoSemHonorario;
+      return docs.ValorTotal;
     });
 
-    jsonDocs["PoliticaNome" + index] = element.PeDescricao;
-    jsonDocs["ValorAtualizado" + index] = atualizaDocs.reduce(
-      (a, b) => a + b,
-      0
-    );
-  }
+    var atualizaDocsDesconto = await docsAtualizados.map((docs) => {
+      return docs.ValorFinal;
+    });
 
+    testeJson[index] = {
+      PeNome: element.PeDescricao,
+      ValorAtualizadoTotal: atualizaDocs.reduce((a, b) => a + b, 0).toFixed(2),
+      DescontoPorcentagem: element.PeDescontoMaximoPercent,
+      DescontoReal: atualizaDocsDesconto.reduce((a, b) => a + b, 0).toFixed(2),
+      ValorFinal: (
+        atualizaDocs.reduce((a, b) => a + b, 0) -
+        atualizaDocsDesconto.reduce((a, b) => a + b, 0)
+      ).toFixed(2),
+      MaximoParcelas: element.PeQuantidadeMaxParcelas,
+    };
+
+    //var testeJson;
+    //jhomaqui
+  } // end for
+
+  jsonDocs["Propostas"] = testeJson;
   res.status(200).json(jsonDocs);
 };

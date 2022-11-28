@@ -68,6 +68,12 @@ module.exports = (sequelize, Sequelize) => {
       PeComboPortal: {
         type: Sequelize.BOOLEAN,
       },
+      PeDescontoMaximoPercent: {
+        type: Sequelize.DOUBLE,
+      },
+      PeQuantidadeMaxParcelas: {
+        type: Sequelize.INTEGER,
+      },
     },
     {
       timestamps: false,
