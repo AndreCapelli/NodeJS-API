@@ -521,6 +521,7 @@ exports.buscaCombo = async (req, res) => {
   jsonDocs["CredorApelido"] = pessoaCliente.CredorApelido;
 
   var testeJson = [];
+  var DocumentosID = "";
 
   for (let index = 0; index < combo.length; index++) {
     const element = combo[index];
@@ -618,10 +619,17 @@ exports.buscaCombo = async (req, res) => {
 
         let Desconto = element.PeDescontoMaximoPercent;
 
-        console.log(Desconto);
+        // console.log(Desconto);
 
         if (Desconto > 0) {
           var ValorFinal = (ValorAtualizadoTotal * Desconto) / 100;
+        }
+
+        console.log("Doc: " + DocumentosID);
+
+        if (index == 0) {
+          if (DocumentosID == "") DocumentosID = docs.Movimentacoes_ID;
+          else DocumentosID = DocumentosID + "," + docs.Movimentacoes_ID;
         }
 
         return {
@@ -640,6 +648,7 @@ exports.buscaCombo = async (req, res) => {
     });
 
     testeJson[index] = {
+      PropostaID: element.PessoasPoliticaCobrancas_ID,
       PeNome: element.PeDescricao,
       ValorAtualizadoTotal: atualizaDocs.reduce((a, b) => a + b, 0).toFixed(2),
       DescontoPorcentagem: element.PeDescontoMaximoPercent,
@@ -651,10 +660,13 @@ exports.buscaCombo = async (req, res) => {
       MaximoParcelas: element.PeQuantidadeMaxParcelas,
     };
 
+    // console.log(docsAtualizados.Movimentacoes_ID);
+
     //var testeJson;
     //jhomaqui
   } // end for
 
+  jsonDocs["Documentos"] = DocumentosID;
   jsonDocs["Propostas"] = testeJson;
   res.status(200).json(jsonDocs);
 };
