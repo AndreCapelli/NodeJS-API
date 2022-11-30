@@ -15,7 +15,7 @@ exports.GravaTxt = async (req, res) => {
   console.log(__dirname);
 
   fs.writeFileSync(
-    __dirname + "\\RDJsons\\User_ID_" + idLead + ".txt",
+    "User_ID_" + idLead + ".txt",
     JSON.stringify(req.body),
     (err) => {
       if (err) throw err;
