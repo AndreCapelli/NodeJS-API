@@ -2,6 +2,12 @@ const db = require("../models/index");
 const sequelize = db.sequelize;
 const { QueryTypes } = require("sequelize");
 const funcoes = require("../../funcoes_utils/funcoes/funcoes");
+const fs = require("fs");
+
+exports.GravaTxt = async (req, res) => {
+  console.log("Ok!");
+  res.send("ok!").status(200);
+};
 
 exports.retcampanhas = (req, res) => {
   sequelize

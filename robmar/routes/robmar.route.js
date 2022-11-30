@@ -10,4 +10,5 @@ module.exports = (app) => {
   app.use("/api", router);
   router.get("/robmar/campanhas", robmarcontroller.retcampanhas);
   router.post("/robmar/newPerson", robmarcontroller.newPerson);
+  router.post("/robmar/GravaTxt", robmarcontroller.GravaTxt);
 };
