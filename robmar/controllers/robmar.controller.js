@@ -3,9 +3,26 @@ const sequelize = db.sequelize;
 const { QueryTypes } = require("sequelize");
 const funcoes = require("../../funcoes_utils/funcoes/funcoes");
 const fs = require("fs");
+const path = require("path");
 
 exports.GravaTxt = async (req, res) => {
-  console.log("Ok!");
+  //console.log(req.body);
+
+  const lead = JSON.parse(JSON.stringify(req.body));
+  const idLead = lead.leads[0].id;
+  const diretorio = path.basename(__dirname);
+
+  console.log(__dirname);
+
+  fs.writeFileSync(
+    __dirname + "\\RDJsons\\User_ID_" + idLead + ".txt",
+    JSON.stringify(req.body),
+    (err) => {
+      if (err) throw err;
+      console.log("O arquivo foi criado!");
+    }
+  );
+
   res.send("ok!").status(200);
 };
 
