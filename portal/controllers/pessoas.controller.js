@@ -971,7 +971,7 @@ exports.RealizaAcordo = async (req, res) => {
     atualizaDocsDesconto.reduce((a, b) => a + b, 0)
   ).toFixed(2);
 
-  res.send("Acordo gerado: " + AcordoID + "!").status(200);
+  res.send("Acordo gerado: " + "Teste" + "!").status(200);
 };
 
 exports.johnTeste = async (req, res) => {
