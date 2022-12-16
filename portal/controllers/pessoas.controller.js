@@ -971,7 +971,7 @@ exports.RealizaAcordo = async (req, res) => {
     atualizaDocsDesconto.reduce((a, b) => a + b, 0)
   ).toFixed(2);
 
-  var sql = `INSERT INTO MovimentacoesAcordos (MoUsuariosID, MoParcelas, moValorOriginalSemCalc, moValorDesconto,  
+  var sql = `SET dateformat dmy INSERT INTO MovimentacoesAcordos (MoUsuariosID, MoParcelas, moValorOriginalSemCalc, moValorDesconto,  
     moPorcentagemDesconto,MoValorTotalJuros,MoTotalHonorarios,MoValorTotalMulta,
     MoValorOriginal, MoClientesID, MoInadimplentesID, MoCampanhasID, MoCodigoCampanha,
     MoValorTotalParcelas, MoDataPrimeiraParcela, MoDataUltimaParcela,
