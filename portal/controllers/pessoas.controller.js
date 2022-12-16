@@ -1022,7 +1022,7 @@ exports.RealizaAcordo = async (req, res) => {
 
   await sequelize
     .query(
-      "INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, " +
+      "set dateformat dmy  INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, " +
         "MoForm, MoRotina, MoTabela, MoMovimentacoesAcordosID)" +
         "VALUES((SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' )," +
         "'Criou acordo via portal', 'API - MaxSmart', 'Post - RealizaAcordos', 'MovimentacoesAcordos', " +
@@ -1041,7 +1041,7 @@ exports.RealizaAcordo = async (req, res) => {
 
     await sequelize
       .query(
-        "INSERT INTO MovimentacoesAcordosDocumentos (MoMovimentacoesAcordosID, MoMovimentacoesID, MoTipoDocumento) " +
+        "set dateformat dmy  INSERT INTO MovimentacoesAcordosDocumentos (MoMovimentacoesAcordosID, MoMovimentacoesID, MoTipoDocumento) " +
           "values(" +
           AcordoID +
           "," +
