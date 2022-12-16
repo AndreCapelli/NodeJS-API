@@ -1086,7 +1086,7 @@ exports.RealizaAcordo = async (req, res) => {
 
     await sequelize
       .query(
-        "INSERT INTO MOVIMENTACOES (MoUsuarioCriadorID, MoUsuariosID," +
+        "set dateformat dmy INSERT INTO MOVIMENTACOES (MoUsuarioCriadorID, MoUsuariosID," +
           "MoOrigemMovimentacao, MoInadimplentesID," +
           "MoClientesID, MoTipoDocumento, MoValorAcordoSemCalc,MoNumeroDocumento," +
           "MoValorDocumento, MoValorOriginalParcela ,MoDataVencimento, MoIdentificacaoAcordo, MoParcela, MoStatusMovimentacao," +
