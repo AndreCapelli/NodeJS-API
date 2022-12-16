@@ -8,6 +8,7 @@ const Op = db.Sequelize.Op;
 
 const calculos = require("../../funcoes_utils/calculos/calculos");
 const funcoes = require("../../funcoes_utils/funcoes/funcoes");
+const { Sequelize } = require("../models/index");
 
 /**
  * Exports. para sempre "exportar" o resultado do que acontecer
@@ -1082,23 +1083,14 @@ exports.RealizaAcordo = async (req, res) => {
     var Dt = Vencimento.split(" ");
     Dt = Dt[0].split("/");
 
-    console.log(Dt[0]);
-
     var dtf = Dt[1] + "/" + Dt[0] + "/" + Dt[2];
-
-    console.log(dtf);
-
     if (parcelas > 0) dtf = funcoes.IncMonth(dtf, parcelas);
 
-    Dt = dtf.split("/");
-
-    dtf = Dt[2] + "-" + Dt[1] + "-" + Dt[0];
-
-    // console.log(dtf);
+    //
 
     sql = "";
     sql =
-      "set dateformat dmy INSERT INTO MOVIMENTACOES (MoUsuarioCriadorID, MoUsuariosID," +
+      " INSERT INTO MOVIMENTACOES (MoUsuarioCriadorID, MoUsuariosID," +
       "MoOrigemMovimentacao, MoInadimplentesID," +
       "MoClientesID, MoTipoDocumento, MoValorAcordoSemCalc,MoNumeroDocumento," +
       "MoValorDocumento, MoValorOriginalParcela ,MoDataVencimento, MoIdentificacaoAcordo, MoParcela, MoStatusMovimentacao," +
