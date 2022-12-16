@@ -1091,9 +1091,9 @@ exports.RealizaAcordo = async (req, res) => {
 
     Dt = dtf.split("/");
 
-    dtf = Dt[2] + "/" + Dt[1] + "/" + Dt[0];
+    dtf = Dt[2] + "-" + Dt[1] + "-" + Dt[0];
 
-    console.log(dtf);
+    // console.log(dtf);
 
     sql = "";
     sql =
