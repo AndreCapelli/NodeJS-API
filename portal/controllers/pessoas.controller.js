@@ -673,6 +673,7 @@ exports.buscaCombo = async (req, res) => {
 
     testeJson[index] = {
       PropostaID: element.PessoasPoliticaCobrancas_ID,
+      DiasDataPrimeiraParcela: 5,
       PeNome: element.PeDescricao,
       ValorAtualizadoTotal: atualizaDocs.reduce((a, b) => a + b, 0).toFixed(2),
       DescontoPorcentagem: element.PeDescontoMaximoPercent,
