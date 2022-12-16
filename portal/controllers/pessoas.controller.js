@@ -1066,6 +1066,73 @@ exports.RealizaAcordo = async (req, res) => {
       });
   }
 
+  var ValorParcela = (ValorFinal / politicas.PeQuantidadeMaxParcelas).toFixed(
+    2
+  );
+  for (
+    let parcelas = 0;
+    parcelas < politicas.PeQuantidadeMaxParcelas;
+    parcelas++
+  ) {
+    let Vencimento = new Date(req.body.primeiro_venc).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    });
+
+    var Dt = Vencimento.split(" ");
+    Dt = Dt[0].split("/");
+
+    var dtf = Dt[1] + "/" + Dt[0] + "/" + Dt[2];
+    if (parcelas > 0) dtf = funcoes.IncMonth(dtf, parcelas);
+
+    sql = "";
+    sql =
+      "set dateformat dmy INSERT INTO MOVIMENTACOES (MoUsuarioCriadorID, MoUsuariosID," +
+      "MoOrigemMovimentacao, MoInadimplentesID," +
+      "MoClientesID, MoTipoDocumento, MoValorAcordoSemCalc,MoNumeroDocumento," +
+      "MoValorDocumento, MoValorOriginalParcela ,MoDataVencimento, MoIdentificacaoAcordo, MoParcela, MoStatusMovimentacao," +
+      "MoMovimentacoesAcordosID, MoCampanhasID, MoCodigoCampanha, MoValorParcelaOriginal)" +
+      "Values((SELECT USUARIOS_ID FROM USUARIOS WITH(NOLOCK) WHERE USNOME = 'CALLTECH')," +
+      UsuarioCobrador +
+      "," +
+      "'A'," +
+      InadimplenteID +
+      "," +
+      ClienteID +
+      ", 'PARCELA - PORTAL'" +
+      ",'" +
+      ValorParcela +
+      "'," +
+      "'AC- " +
+      AcordoID +
+      "','" +
+      ValorParcela +
+      "','" +
+      ValorParcela +
+      "','" +
+      dtf +
+      "','AC- " +
+      AcordoID +
+      "/" +
+      (parcelas + 1) +
+      "'," +
+      (parcelas + 1) +
+      ",0," +
+      AcordoID +
+      "," +
+      CampanhaID +
+      ",'" +
+      CampanhaCodigo +
+      "','" +
+      ValorParcela +
+      "')";
+
+    console.log(sql);
+
+    await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
+      res.status(400).send({ erro: err.message });
+    });
+  }
+
   res.send("" + AcordoID).status(200);
 };
 
