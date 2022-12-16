@@ -1021,7 +1021,7 @@ exports.RealizaAcordo = async (req, res) => {
       });
     });
 
-  await sequelize
+  /*await sequelize
     .query(
       "set dateformat dmy  INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, " +
         "MoForm, MoRotina, MoTabela, MoMovimentacoesAcordosID)" +
@@ -1033,7 +1033,7 @@ exports.RealizaAcordo = async (req, res) => {
     )
     .catch((err) => {
       res.status(400).send({ erro: err.message });
-    });
+    });*/
 
   //movimentacoesAcordosDocumentos
 
