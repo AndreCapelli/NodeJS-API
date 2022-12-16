@@ -971,6 +971,36 @@ exports.RealizaAcordo = async (req, res) => {
     atualizaDocsDesconto.reduce((a, b) => a + b, 0)
   ).toFixed(2);
 
+  var sql = `INSERT INTO MovimentacoesAcordos (MoUsuariosID, MoParcelas, moValorOriginalSemCalc, moValorDesconto,  
+    moPorcentagemDesconto,MoValorTotalJuros,MoTotalHonorarios,MoValorTotalMulta,
+    MoValorOriginal, MoClientesID, MoInadimplentesID, MoCampanhasID, MoCodigoCampanha,
+    MoValorTotalParcelas, MoDataPrimeiraParcela, MoDataUltimaParcela,
+    MoTabelaIndicesEconomicosID, MoPessoasPoliticaCobrancasID, MoSaldoDevedor,
+    MoTotalCorrecao, MoOrigemAcordo) VALUES((SELECT TOP 1 Usuarios_ID FROM USUARIOS Where USNome='CALLTECH'),
+    ${politicas.PeQuantidadeMaxParcelas},'${OriginalSemCalc.toFixed(
+    2
+  )}','${DescontoReal.toFixed(2)}','${
+    politicas.PeDescontoMaximoPercent
+  }','${TotalJuros.toFixed(2)}','${TotalHonorarios.toFixed(
+    2
+  )}','${TotalMulta.toFixed(2)}','${parseFloat(ValorFinal).toFixed(
+    2
+  )}',${ClienteID},${InadimplenteID},${CampanhaID},'${CampanhaCodigo}','${parseFloat(
+    ValorFinal
+  ).toFixed(2)}','${req.body.primeiro_venc}','${req.body.ultimo_venc}',${
+    politicas.PeTabelaIndicesEconomicosID == 0
+      ? "NULL"
+      : politicas.PeTabelaIndicesEconomicosID
+  },${politicas.PessoasPoliticaCobrancas_ID}, '${parseFloat(ValorFinal).toFixed(
+    2
+  )}','${TotalCorrecao.toFixed(2)}','PORTAL')`;
+
+  await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
+    console.log(eer.message);
+    res.status(400).send({ erro: err.message });
+    return;
+  });
+
   res.send("Acordo gerado: " + "Teste" + "!").status(200);
 };
 
