@@ -1,16 +1,26 @@
 const funcoes = require("../funcoes/funcoes");
 
+const db = require("../../portal/models/index");
+const Movimentacoes = db.movimentacoes;
+const Politicas = db.politicas;
+const Op = db.Sequelize.Op;
+
+const sequelize = db.sequelize;
+const { QueryTypes, json, IndexHints } = require("sequelize");
+
 const CalcDataVencimento = [];
 const CalcValorParcela = [];
 const CalcValorJuros = [];
 const CalcDiasParcela = [];
 const CalcValorTotalParcela = [];
+const AtualizaDocumento = [];
 
 exports.CalcDataVencimento = CalcDataVencimento;
 exports.CalcValorParcela = CalcValorParcela;
 exports.CalcValorJuros = CalcValorJuros;
 exports.CalcDiasParcela = CalcDiasParcela;
 exports.CalcValorTotalParcela = CalcValorTotalParcela;
+exports.AtualizaDocumento = AtualizaDocumento;
 
 exports.CalculaJuros = (Valor, Juros, Dias, Tipo) => {
   let li, nDias, vJuros;
@@ -186,4 +196,154 @@ exports.CalculaPrice = (
   });
 
   return resultRetorna;
+};
+
+exports.AtualizaDocumento = async (DocumentoID, PoliticaID) => {
+  var politicas = await sequelize
+    .query(
+      `select *
+  from PessoasPoliticaCobrancas WITH(NOLOCK) Where PessoasPoliticaCobrancas_ID = ${PoliticaID}`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    )
+    .then((data) => {
+      if (data.length === 0) {
+        res.status(400).send({ mensagem: "Nenhuma politica encontrada!" });
+      } else {
+        return data;
+      }
+    })
+    .catch((err) => {
+      console.log("Falha ao localizar politica " + err.message);
+    }); // fim politica
+  console.log(politicas.PeDescricao);
+
+  var docs = await Movimentacoes.findAll({
+    where: {
+      Movimentacoes_ID: DocumentoID,
+    },
+  })
+    .then((data) => {
+      return data;
+    })
+    .catch((err) => {
+      res.status(500).json({
+        message: err.message + " Algum erro aconteceu na busca dos Documentos!",
+      });
+    });
+
+  var indiceCorrecao = await funcoes.RetornaIndiceTabela(
+    docs.MoDataVencimento,
+    politicas.PeTabelaIndicesEconomicosID,
+    docs.Movimentacoes_ID
+  );
+
+  let ValorCorrecaoReal = parseFloat(
+    calculos.CalculaCorrecao(docs.MoValorDocumento, indiceCorrecao)
+  );
+
+  let ValorJurosReal = parseFloat(
+    calculos.CalculaJuros(
+      docs.MoValorDocumento +
+        (politicas.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0),
+      politicas.PeJuros,
+      funcoes.CalculaDias(
+        funcoes.ArrumaData(docs.MoDataVencimento),
+        funcoes.RetornaData()
+      ),
+      politicas.PeTipoJuros == "" ? "S" : politicas.PeTipoJuros
+    )
+  );
+
+  let ValorMultaReal = parseFloat(
+    calculos.CalculaMulta(
+      docs.MoValorDocumento + ValorCorrecaoReal,
+      politicas.PeMulta
+    )
+  );
+
+  let MoValorAtualizadoSemHonorario =
+    docs.MoValorDocumento + ValorJurosReal + ValorMultaReal + ValorCorrecaoReal;
+
+  if (politicas.PeHonorarioSobVA) {
+    var ValorHonorarioReal = parseFloat(
+      calculos.CalculaHonorarios(
+        MoValorAtualizadoSemHonorario,
+        politicas.PeHonorario
+      )
+    );
+  } else {
+    var ValorHonorarioReal = parseFloat(
+      calculos.CalculaHonorarios(docs.MoValorDocumento, politicas.PeHonorario)
+    );
+  }
+
+  let ValorHonorariosSobJuros =
+    politicas.PeAplicaHonorario_Juros == true
+      ? parseFloat(
+          calculos.CalculaHonorarios(ValorJurosReal, politicas.PeHonorario)
+        )
+      : 0;
+
+  let ValorHonorarioSobMulta =
+    politicas.PeAplicaHonorario_Multa == true
+      ? parseFloat(
+          calculos.CalculaHonorarios(ValorMultaReal, politicas.PeHonorario)
+        )
+      : 0;
+
+  let ValorHonorarioSobCorrecao =
+    politicas.PeAplicaHonorario_Correcao == true
+      ? parseFloat(
+          calculos.CalculaHonorarios(ValorCorrecaoReal, politicas.PeHonorario)
+        )
+      : 0;
+
+  let ValorHonorarioRealTotal =
+    ValorHonorarioReal +
+    ValorHonorarioSobCorrecao +
+    ValorHonorarioSobMulta +
+    ValorHonorariosSobJuros;
+
+  let ValorAtualizadoTotal =
+    docs.MoValorDocumento +
+    ValorJurosReal +
+    ValorMultaReal +
+    ValorCorrecaoReal +
+    ValorHonorarioRealTotal;
+
+  console.log(ValorAtualizadoTotal);
+
+  return {
+    Movimentacoes_ID: docs.Movimentacoes_ID,
+    MoInadimplentesID: docs.MoInadimplentesID,
+    MoClientesID: docs.MoClientesID,
+    MoValorDocumento: docs.MoValorDocumento,
+    MoCorrecaoIndice: indiceCorrecao,
+    MoValorCorrecao: ValorCorrecaoReal,
+    MoDiasAtraso: funcoes.CalculaDias(
+      funcoes.ArrumaData(docs.MoDataVencimento),
+      funcoes.RetornaData()
+    ),
+    MoJurosPorcentagem: politicas.PeJuros,
+    MoValorJuros: ValorJurosReal,
+    MoPorcentagemMulta: politicas.PeMulta,
+    MoValorMulta: ValorMultaReal,
+    MoValorAtualizadoSemHonorario:
+      docs.MoValorDocumento +
+      ValorJurosReal +
+      ValorMultaReal +
+      ValorCorrecaoReal,
+    MoHonorariosPorcentagem: politicas.PeHonorario,
+    MoValorHonorarios: ValorHonorarioReal,
+    MoValorHonorarioSobJuros: ValorHonorariosSobJuros,
+    MoValorHonorarioSobMulta: ValorHonorarioSobMulta,
+    MoValorHonorarioSobCorrecao: ValorHonorarioSobCorrecao,
+    MoValorHonorarioTotal: ValorHonorarioRealTotal,
+    MoValorAtualizado: ValorAtualizadoTotal.toFixed(2),
+    MoDataVencimento: docs.MoDataVencimento,
+    MoNumeroDocumento: docs.MoNumeroDocumento,
+    MoTipoDocumento: docs.MoTipoDocumento,
+  };
 };

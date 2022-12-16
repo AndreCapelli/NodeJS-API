@@ -3,8 +3,10 @@ module.exports = (app) => {
   const router = require("express").Router();
 
   router.get("/buscaCredor/:Documento", pessoa.findOne);
+  router.get("/AtualizaDocs/:Documentos", pessoa.johnTeste);
   router.post("/atualizaEmail/", pessoa.atualizaEmail);
   router.get("/combo/:DocInad&:DocCli", pessoa.buscaCombo);
+  router.post("/RealizaAcordo/", pessoa.RealizaAcordo);
 
   app.use("/portal", router);
 };

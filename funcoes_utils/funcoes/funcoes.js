@@ -71,6 +71,19 @@ exports.IncDay = (Data, Inc) => {
   return dateResult[0];
 };
 
+exports.addZeroes = (num, len) => {
+  var numberWithZeroes = String(num);
+  var counter = numberWithZeroes.length;
+
+  while (counter < len) {
+    numberWithZeroes = "0" + numberWithZeroes;
+
+    counter++;
+  }
+
+  return numberWithZeroes;
+};
+
 exports.RetornaIndiceTabela = async (
   MesDivida,
   TabelaIndiceID,
