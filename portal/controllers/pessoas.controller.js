@@ -1002,7 +1002,137 @@ exports.RealizaAcordo = async (req, res) => {
     return;
   });
 
-  res.send("Acordo gerado: " + "Teste" + "!").status(200);
+  var AcordoID;
+  await sequelize
+    .query(`SELECT IDENT_CURRENT('MovimentacoesAcordos') Acordo`, {
+      type: QueryTypes.SELECT,
+    })
+    .then((data) => {
+      if (data.length === 0) {
+        res.status(400).send({ mensagem: "Nenhum registro encontrado" });
+      } else {
+        AcordoID = data[0].Acordo;
+      }
+    })
+    .catch((err) => {
+      res.status(400).send({
+        mensagem: "Erro ao localizar Acordo! " + err.message,
+      });
+    });
+
+  await sequelize
+    .query(
+      "INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, " +
+        "MoForm, MoRotina, MoTabela, MoMovimentacoesAcordosID)" +
+        "VALUES((SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' )," +
+        "'Criou acordo via portal', 'API - MaxSmart', 'Post - RealizaAcordos', 'MovimentacoesAcordos', " +
+        AcordoID +
+        ")",
+      { type: QueryTypes.INSERT }
+    )
+    .catch((err) => {
+      res.status(400).send({ erro: err.message });
+    });
+
+  //movimentacoesAcordosDocumentos
+
+  for (let index = 0; index < docs.length; index++) {
+    const element = docs[index];
+
+    await sequelize
+      .query(
+        "INSERT INTO MovimentacoesAcordosDocumentos (MoMovimentacoesAcordosID, MoMovimentacoesID, MoTipoDocumento) " +
+          "values(" +
+          AcordoID +
+          "," +
+          element.Movimentacoes_ID +
+          ",'O')",
+        { type: QueryTypes.INSERT }
+      )
+      .catch((err) => {
+        res.status(400).send({ erro: err.message });
+      });
+
+    await sequelize
+      .query(
+        "UPDATE Movimentacoes SET MoDestinoAcordoID=" +
+          AcordoID +
+          " Where Movimentacoes_ID=" +
+          element.Movimentacoes_ID,
+        { type: QueryTypes.UPDATE }
+      )
+      .catch((err) => {
+        res.status(400).send({ erro: err.message });
+      });
+  }
+
+  var ValorParcela = (ValorFinal / politicas.PeQuantidadeMaxParcelas).toFixed(
+    2
+  );
+  for (
+    let parcelas = 0;
+    parcelas < politicas.PeQuantidadeMaxParcelas;
+    parcelas++
+  ) {
+    let Vencimento = new Date(req.body.primeiro_venc).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+    });
+
+    var Dt = Vencimento.split(" ");
+    Dt = Dt[0].split("/");
+
+    var dtf = Dt[1] + "/" + Dt[0] + "/" + Dt[2];
+    if (parcelas > 0) dtf = funcoes.IncMonth(dtf, parcelas);
+
+    await sequelize
+      .query(
+        "INSERT INTO MOVIMENTACOES (MoUsuarioCriadorID, MoUsuariosID," +
+          "MoOrigemMovimentacao, MoInadimplentesID," +
+          "MoClientesID, MoTipoDocumento, MoValorAcordoSemCalc,MoNumeroDocumento," +
+          "MoValorDocumento, MoValorOriginalParcela ,MoDataVencimento, MoIdentificacaoAcordo, MoParcela, MoStatusMovimentacao," +
+          "MoMovimentacoesAcordosID, MoCampanhasID, MoCodigoCampanha, MoValorParcelaOriginal)" +
+          "Values((SELECT USUARIOS_ID FROM USUARIOS WITH(NOLOCK) WHERE USNOME = 'CALLTECH')," +
+          UsuarioCobrador +
+          "," +
+          "'A'," +
+          InadimplenteID +
+          "," +
+          ClienteID +
+          ", 'PARCELA - PORTAL'" +
+          ",'" +
+          ValorParcela +
+          "'," +
+          "'AC- " +
+          AcordoID +
+          "','" +
+          ValorParcela +
+          "','" +
+          ValorParcela +
+          "','" +
+          dtf +
+          "','AC- " +
+          AcordoID +
+          "/" +
+          (parcelas + 1) +
+          "'," +
+          (parcelas + 1) +
+          ",0," +
+          AcordoID +
+          "," +
+          CampanhaID +
+          ",'" +
+          CampanhaCodigo +
+          "','" +
+          ValorParcela +
+          "')",
+        { type: QueryTypes.INSERT }
+      )
+      .catch((err) => {
+        res.status(400).send({ erro: err.message });
+      });
+  }
+
+  res.send("Acordo gerado: " + AcordoID + "!").status(200);
 };
 
 exports.johnTeste = async (req, res) => {
