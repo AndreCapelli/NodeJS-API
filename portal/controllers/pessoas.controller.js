@@ -1069,12 +1069,13 @@ exports.RealizaAcordo = async (req, res) => {
   var ValorParcela = (ValorFinal / politicas.PeQuantidadeMaxParcelas).toFixed(
     2
   );
+
   for (
     let parcelas = 0;
     parcelas < politicas.PeQuantidadeMaxParcelas;
     parcelas++
   ) {
-    let Vencimento = new Date(req.body.primeiro_venc).toLocaleString("pt-BR", {
+    let Vencimento = new Date(Date).toLocaleString("pt-BR", {
       timeZone: "America/Sao_Paulo",
     });
 
