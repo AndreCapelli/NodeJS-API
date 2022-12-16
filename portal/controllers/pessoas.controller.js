@@ -1034,7 +1034,7 @@ exports.RealizaAcordo = async (req, res) => {
       res.status(400).send({ erro: err.message });
     });
 
-  res.send(AcordoID).status(200);
+  res.send("" + AcordoID).status(200);
 };
 
 exports.johnTeste = async (req, res) => {
