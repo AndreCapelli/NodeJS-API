@@ -1075,7 +1075,7 @@ exports.RealizaAcordo = async (req, res) => {
     parcelas < politicas.PeQuantidadeMaxParcelas;
     parcelas++
   ) {
-    let Vencimento = new Date(Date).toLocaleString("pt-BR", {
+    let Vencimento = new Date(req.body.primeiro_venc).toLocaleString("pt-BR", {
       timeZone: "America/Sao_Paulo",
     });
 
