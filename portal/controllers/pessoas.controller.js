@@ -1020,7 +1020,21 @@ exports.RealizaAcordo = async (req, res) => {
       });
     });
 
-  res.send("Acordo gerado: " + AcordoID + "!").status(200);
+  await sequelize
+    .query(
+      "set dateformat dmy  INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, " +
+        "MoForm, MoRotina, MoTabela, MoMovimentacoesAcordosID)" +
+        "VALUES((SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' )," +
+        "'Criou acordo via portal', 'API - MaxSmart', 'Post - RealizaAcordos', 'MovimentacoesAcordos', " +
+        AcordoID +
+        ")",
+      { type: QueryTypes.INSERT }
+    )
+    .catch((err) => {
+      res.status(400).send({ erro: err.message });
+    });
+
+  res.send(AcordoID).status(200);
 };
 
 exports.johnTeste = async (req, res) => {
