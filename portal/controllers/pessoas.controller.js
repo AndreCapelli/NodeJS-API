@@ -996,7 +996,9 @@ exports.RealizaAcordo = async (req, res) => {
   )}','${TotalCorrecao.toFixed(2)}','PORTAL')`;
 
   await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
+    console.log(eer.message);
     res.status(400).send({ erro: err.message });
+    return;
   });
 
   var AcordoID;
