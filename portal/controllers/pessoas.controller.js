@@ -1034,6 +1034,38 @@ exports.RealizaAcordo = async (req, res) => {
       res.status(400).send({ erro: err.message });
     });
 
+  //movimentacoesAcordosDocumentos
+
+  for (let index = 0; index < docs.length; index++) {
+    const element = docs[index];
+
+    await sequelize
+      .query(
+        "set dateformat dmy  INSERT INTO MovimentacoesAcordosDocumentos (MoMovimentacoesAcordosID, MoMovimentacoesID, MoTipoDocumento) " +
+          "values(" +
+          AcordoID +
+          "," +
+          element.Movimentacoes_ID +
+          ",'O')",
+        { type: QueryTypes.INSERT }
+      )
+      .catch((err) => {
+        res.status(400).send({ erro: err.message });
+      });
+
+    await sequelize
+      .query(
+        "UPDATE Movimentacoes SET MoDestinoAcordoID=" +
+          AcordoID +
+          " Where Movimentacoes_ID=" +
+          element.Movimentacoes_ID,
+        { type: QueryTypes.UPDATE }
+      )
+      .catch((err) => {
+        res.status(400).send({ erro: err.message });
+      });
+  }
+
   res.send("" + AcordoID).status(200);
 };
 
