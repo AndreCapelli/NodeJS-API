@@ -1081,8 +1081,19 @@ exports.RealizaAcordo = async (req, res) => {
     var Dt = Vencimento.split(" ");
     Dt = Dt[0].split("/");
 
+    console.log(Dt[0]);
+
     var dtf = Dt[1] + "/" + Dt[0] + "/" + Dt[2];
+
+    console.log(dtf);
+
     if (parcelas > 0) dtf = funcoes.IncMonth(dtf, parcelas);
+
+    Dt = dtf.split("/");
+
+    dtf = Dt[2] + "/" + Dt[1] + "/" + Dt[0];
+
+    console.log(dtf);
 
     sql = "";
     sql =
@@ -1126,7 +1137,7 @@ exports.RealizaAcordo = async (req, res) => {
       ValorParcela +
       "')";
 
-    console.log(sql);
+    //console.log(sql);
 
     await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
       res.status(400).send({ erro: err.message });
