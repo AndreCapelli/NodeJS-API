@@ -1021,7 +1021,7 @@ exports.RealizaAcordo = async (req, res) => {
       });
     });
 
-  /*await sequelize
+  await sequelize
     .query(
       "set dateformat dmy  INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, " +
         "MoForm, MoRotina, MoTabela, MoMovimentacoesAcordosID)" +
@@ -1033,7 +1033,7 @@ exports.RealizaAcordo = async (req, res) => {
     )
     .catch((err) => {
       res.status(400).send({ erro: err.message });
-    });*/
+    });
 
   //movimentacoesAcordosDocumentos
 
@@ -1076,21 +1076,15 @@ exports.RealizaAcordo = async (req, res) => {
     parcelas < politicas.PeQuantidadeMaxParcelas;
     parcelas++
   ) {
-    let Vencimento = new Date(req.body.primeiro_venc).toLocaleString("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-    });
+    var dtf = req.body.primeiro_venc;
 
-    var Dt = Vencimento.split(" ");
-    Dt = Dt[0].split("/");
-
-    var dtf = Dt[1] + "/" + Dt[0] + "/" + Dt[2];
     if (parcelas > 0) dtf = funcoes.IncMonth(dtf, parcelas);
 
-    //
+    console.log(dtf);
 
     sql = "";
     sql =
-      " INSERT INTO MOVIMENTACOES (MoUsuarioCriadorID, MoUsuariosID," +
+      "SET dateformat DMY INSERT INTO MOVIMENTACOES (MoUsuarioCriadorID, MoUsuariosID," +
       "MoOrigemMovimentacao, MoInadimplentesID," +
       "MoClientesID, MoTipoDocumento, MoValorAcordoSemCalc,MoNumeroDocumento," +
       "MoValorDocumento, MoValorOriginalParcela ,MoDataVencimento, MoIdentificacaoAcordo, MoParcela, MoStatusMovimentacao," +
