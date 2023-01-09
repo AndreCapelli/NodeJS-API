@@ -92,6 +92,27 @@ exports.atualizaEmail = async (req, res) => {
   }
 
   await insereContato();
+
+  await sequelize
+    .query(
+      "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
+        "Values('" +
+        req.params.Documento +
+        "','ATUALIZOU TELEFONE/ EMAIL" +
+        DDD +
+        " " +
+        telefone +
+        " " +
+        email +
+        "', GetDate()," +
+        pessoa.Pessoas_ID +
+        ")",
+      { type: QueryTypes.INSERT }
+    )
+    .catch((err) => {
+      console.log("Erro: " + err.message);
+    });
+
   res.status(200).send("Contato insereido com sucesso");
   return;
 };
@@ -103,6 +124,18 @@ exports.findOne = async (req, res) => {
       .send({ message: "Documento inválido, por favor preencha novamente!" });
     return;
   }
+
+  await sequelize
+    .query(
+      "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData) " +
+        "Values('" +
+        req.params.Documento +
+        "','SOLICITOU BUSCA DE DIVIDAS', GetDate()) ",
+      { type: QueryTypes.INSERT }
+    )
+    .catch((err) => {
+      console.log("Erro: " + err.message);
+    });
 
   const pessoaDevedor = await Pessoas.findAll({
     where: {
@@ -139,8 +172,35 @@ exports.findOne = async (req, res) => {
 
   if (pessoaDevedor.Vazio == "") {
     res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
+
+    await sequelize
+      .query(
+        "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData) " +
+          "Values('" +
+          req.params.Documento +
+          "','PESSOA NÃO ENCONTRADA', GetDate()) ",
+        { type: QueryTypes.INSERT }
+      )
+      .catch((err) => {
+        console.log("Erro: " + err.message);
+      });
+
     return;
   }
+
+  await sequelize
+    .query(
+      "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
+        "Values('" +
+        req.params.Documento +
+        "','PESSOA LOCALIZADA', GetDate()," +
+        pessoaDevedor.Pessoas_ID +
+        ")",
+      { type: QueryTypes.INSERT }
+    )
+    .catch((err) => {
+      console.log("Erro: " + err.message);
+    });
 
   const devedorCredores = await Movimentacoes.findAll({
     where: {
@@ -475,6 +535,22 @@ exports.buscaCombo = async (req, res) => {
     return;
   }
 
+  await sequelize
+    .query(
+      "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
+        "Values('" +
+        req.params.Documento +
+        "','BUSCOU COMBOS" +
+        req.params.JPesCNPJ +
+        "', GetDate()," +
+        pessoaDevedor.Pessoas_ID +
+        ")",
+      { type: QueryTypes.INSERT }
+    )
+    .catch((err) => {
+      console.log("Erro: " + err.message);
+    });
+
   const docs = await Movimentacoes.findAll({
     where: {
       MoInadimplentesID: pessoaDevedor.Pessoas_ID,
@@ -725,6 +801,8 @@ exports.RealizaAcordo = async (req, res) => {
   Documentos = req.body.documentos;
   PoliticaID = req.body.propostaid;
 
+  var Erro = false;
+
   if (!ClienteID) {
     res.status(406).json({ message: "Cliente não informado!" });
     return;
@@ -831,6 +909,8 @@ exports.RealizaAcordo = async (req, res) => {
         docs.Movimentacoes_ID
       );
 
+      let indID = politicas.PeTabelaIndicesEconomicosID;
+
       let ValorCorrecaoReal = parseFloat(
         calculos.CalculaCorrecao(docs.MoValorDocumento, indiceCorrecao)
       );
@@ -909,22 +989,47 @@ exports.RealizaAcordo = async (req, res) => {
         ValorHonorarioSobMulta +
         ValorHonorariosSobJuros;
 
-      let ValorAtualizadoTotal =
-        docs.MoValorDocumento +
-        ValorJurosReal +
-        ValorMultaReal +
-        ValorCorrecaoReal +
-        ValorHonorarioRealTotal;
+      let ValorAtualizadoTotal = (
+        parseFloat(docs.MoValorDocumento) +
+        parseFloat(ValorJurosReal) +
+        parseFloat(ValorMultaReal) +
+        parseFloat(ValorCorrecaoReal) +
+        parseFloat(ValorHonorarioRealTotal)
+      ).toFixed(2);
+
+      console.log("Total sem honorarios : " + ValorAtualizadoTotal);
 
       let Desconto = politicas.PeDescontoMaximoPercent;
 
       if (Desconto > 0) {
-        var ValorFinal = (ValorAtualizadoTotal * Desconto) / 100;
+        var ValorDesconto = (ValorAtualizadoTotal * Desconto) / 100;
       }
 
+      let ValorFinalComDesconto = (
+        ValorAtualizadoTotal - ValorDesconto
+      ).toFixed(2);
+
+      var MovId = docs.Movimentacoes_ID;
+
       return {
-        ValorFinal: parseFloat(ValorFinal),
-        ValorTotal: ValorAtualizadoTotal,
+        Id: MovId,
+        JurosReal: ValorJurosReal,
+        MultaReal: ValorMultaReal,
+        CorrecaoReal: ValorCorrecaoReal,
+        HonorarioReal: ValorHonorarioReal,
+        IndiceCorrecao: indiceCorrecao,
+        HJR: ValorHonorariosSobJuros,
+        HMR: ValorHonorarioSobMulta,
+        HCR: ValorHonorarioSobCorrecao,
+        IndiceID: indID,
+        DescontoReal: ValorDesconto,
+        DescontoPercent: Desconto,
+        DiasAtraso: funcoes.CalculaDias(
+          funcoes.ArrumaData(docs.MoDataVencimento),
+          funcoes.RetornaData()
+        ),
+        ValorFinal: parseFloat(ValorFinalComDesconto),
+        ValorTotal: ValorFinalComDesconto,
         ValorOriginalSemCalc: ValorOriginalSemCalc,
         ValorTotalJuros: ValorJurosReal,
         ValorTotalMulta: ValorMultaReal,
@@ -935,11 +1040,11 @@ exports.RealizaAcordo = async (req, res) => {
   );
 
   var atualizaDocs = await docsAtualizados.map((docs) => {
-    return docs.ValorTotal;
+    return parseFloat(docs.ValorTotal);
   });
 
   var atualizaDocsDesconto = await docsAtualizados.map((docs) => {
-    return docs.ValorFinal;
+    return parseFloat(docs.DescontoReal);
   });
 
   var atualizaDocsOriginalSemCalc = await docsAtualizados.map((docs) => {
@@ -957,8 +1062,13 @@ exports.RealizaAcordo = async (req, res) => {
   var atualizaDocsTotalCorrecao = await docsAtualizados.map((docs) => {
     return docs.ValorTotalCorrecao;
   });
+
   var atualizaDocsTotalHonorarios = await docsAtualizados.map((docs) => {
     return docs.ValorTotalHonorarios;
+  });
+
+  var atualizaDocsTotalComDesconto = await docsAtualizados.map((docs) => {
+    return docs.ValorFinal;
   });
 
   let OriginalSemCalc = atualizaDocsOriginalSemCalc.reduce((a, b) => a + b, 0);
@@ -967,10 +1077,10 @@ exports.RealizaAcordo = async (req, res) => {
   let TotalCorrecao = atualizaDocsTotalCorrecao.reduce((a, b) => a + b, 0);
   let TotalHonorarios = atualizaDocsTotalHonorarios.reduce((a, b) => a + b, 0);
   let DescontoReal = atualizaDocsDesconto.reduce((a, b) => a + b, 0);
-  var ValorFinal = (
-    atualizaDocs.reduce((a, b) => a + b, 0) -
-    atualizaDocsDesconto.reduce((a, b) => a + b, 0)
-  ).toFixed(2);
+  let ValorFinal = atualizaDocsTotalComDesconto.reduce((a, b) => a + b, 0);
+
+  console.log("Valor Desconto: " + DescontoReal);
+  console.log("Valor final: " + ValorFinal);
 
   var sql = `SET dateformat dmy INSERT INTO MovimentacoesAcordos (MoUsuariosID, MoParcelas, moValorOriginalSemCalc, moValorDesconto,  
     moPorcentagemDesconto,MoValorTotalJuros,MoTotalHonorarios,MoValorTotalMulta,
@@ -997,11 +1107,13 @@ exports.RealizaAcordo = async (req, res) => {
   )}','${TotalCorrecao.toFixed(2)}','PORTAL')`;
 
   await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
-    console.log(sql);
-    console.log(err.message);
-    res.status(400).send({ erro: err.message });
+    res.send({ erro: err.message }).status(400);
+    console.log("Erro: " + err.message);
+    Erro = true;
     return;
   });
+
+  if (Erro) return;
 
   var AcordoID;
   await sequelize
@@ -1124,12 +1236,112 @@ exports.RealizaAcordo = async (req, res) => {
       ValorParcela +
       "')";
 
-    //console.log(sql);
+    await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
+      res.status(400).send({ erro: err.message });
+    });
+
+    var MovimentacaoID;
+    await sequelize
+      .query(`SELECT IDENT_CURRENT('Movimentacoes') ID`, {
+        type: QueryTypes.SELECT,
+      })
+      .then((data) => {
+        if (data.length === 0) {
+          res.status(400).send({ mensagem: "Nenhum registro encontrado" });
+        } else {
+          MovimentacaoID = data[0].ID;
+        }
+      })
+      .catch((err) => {
+        res.status(400).send({
+          mensagem: "Erro ao localizar Movimentacao! " + err.message,
+        });
+      });
+
+    await sequelize
+      .query(
+        "INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, MoForm, MoRotina, " +
+          "MoTabela, MoMovimentacoesAcordosID, MoMovimentacoesID)" +
+          " VALUES((SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' ),'Criou movimentacao via portal','API','Post - RealizaAcordo', 'Movimentacoes'," +
+          AcordoID +
+          "," +
+          MovimentacaoID +
+          ")",
+        { type: QueryTypes.INSERT }
+      )
+      .catch((err) => {
+        res.status(400).send({ erro: err.message });
+      });
+  }
+
+  for (let index = 0; index < docsAtualizados.length; index++) {
+    sql =
+      "INSERT INTO MovimentacoesPoliticasDeCobranca (MovimentacoesID,MoPoDiaAtraso,MoPoJurosP,MoPoJurosR,MoPoMultaP" +
+      ",MoPoMultaR,MoPoHonorarioP,MoPoHonorarioR, MoPoCorrecaoP,MoPoCorrecaoR,MoPoHonorarioJurosR" +
+      ",MoPoHonorarioMultaR, MoPoHonorarioCorrecaoR, MoPoValorAtualizado, MoTabelaIndicesEconomicosID, MoDescontoReal, MoDescontoPercent)";
+
+    sql =
+      sql +
+      "Values(" +
+      docsAtualizados[index].Id +
+      "," +
+      docsAtualizados[index].DiasAtraso +
+      ",'" +
+      politicas.PeJuros +
+      "','" +
+      docsAtualizados[index].JurosReal +
+      "','" +
+      politicas.PeMulta +
+      "','" +
+      docsAtualizados[index].MultaReal +
+      "','" +
+      politicas.PeHonorario +
+      "','" +
+      docsAtualizados[index].HonorarioReal +
+      "','" +
+      docsAtualizados[index].IndiceCorrecao +
+      "','" +
+      docsAtualizados[index].CorrecaoReal +
+      "','" +
+      docsAtualizados[index].HJR +
+      "','" +
+      docsAtualizados[index].HMR +
+      "','" +
+      docsAtualizados[index].HCR +
+      "','" +
+      docsAtualizados[index].ValorTotal +
+      "'," +
+      docsAtualizados[index].IndiceID +
+      ",'" +
+      docsAtualizados[index].DescontoReal +
+      "','" +
+      docsAtualizados[index].DescontoPercent +
+      "')";
 
     await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
       res.status(400).send({ erro: err.message });
     });
+
+    if (Erro) return;
   }
+
+  await sequelize
+    .query(
+      "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
+        "Values('" +
+        req.params.Documento +
+        "','Realizou Acordo Nº " +
+        AcordoID +
+        " ClienteID: " +
+        ClienteID +
+        "', GetDate()," +
+        InadimplenteID +
+        ")",
+      { type: QueryTypes.INSERT }
+    )
+    .catch((err) => {
+      console.log("Erro: " + err.message);
+    });
 
   res.send("" + AcordoID).status(200);
 };
