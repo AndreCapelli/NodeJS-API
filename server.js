@@ -74,18 +74,18 @@ require("./portal/routes/pessoas.route")(app);
 // set port, listen for requests
 const PORT = 21000;
 //const PORT = 8080;
-// app.listen(PORT, () => {
-//   console.log(`Server is running on port ${PORT}.`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}.`);
+});
 
-https
-  .createServer(
-    {
-      cert: fs.readFileSync("./SSL/code.crt"),
-      key: fs.readFileSync("./SSL/code.key"),
-    },
-    app
-  )
-  .listen(PORT, () =>
-    console.log(`HTTPS - Server is running on port ${PORT}.`)
-  );
+// https
+//   .createServer(
+//     {
+//       cert: fs.readFileSync("./SSL/code.crt"),
+//       key: fs.readFileSync("./SSL/code.key"),
+//     },
+//     app
+//   )
+//   .listen(PORT, () =>
+//     console.log(`HTTPS - Server is running on port ${PORT}.`)
+//   );
