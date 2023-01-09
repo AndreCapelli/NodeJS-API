@@ -69,8 +69,8 @@ require("./robmar/routes/robmar.route")(app);
 require("./portal/routes/pessoas.route")(app);
 
 // set port, listen for requests
-//const PORT = 21000;
-const PORT = 8080;
+const PORT = 21000;
+//const PORT = 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });

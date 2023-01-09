@@ -6,6 +6,14 @@ const Movimentacoes = db.movimentacoes;
 const Politicas = db.politicas;
 const Op = db.Sequelize.Op;
 
+const https = require("https");
+const fs = require("fs");
+
+// const options = {
+//   key: fs.readFileSync("path/to/private.key"),
+//   cert: fs.readFileSync("path/to/certificate.crt"),
+// };
+
 const calculos = require("../../funcoes_utils/calculos/calculos");
 const funcoes = require("../../funcoes_utils/funcoes/funcoes");
 const { Sequelize } = require("../models/index");
