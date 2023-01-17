@@ -453,6 +453,8 @@ exports.findOne = async (req, res) => {
       (a, b) => a + b,
       0
     );
+    testeJson["QuantidadeDocs" + index + "_" + dadosCredor.CredorID] =
+      docsAtualizados.length;
     testeJson["ArrayDocs" + index] = docsAtualizados;
   }
 
