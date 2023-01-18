@@ -625,9 +625,13 @@ exports.buscaCombo = async (req, res) => {
           docs.Movimentacoes_ID
         );
 
-        let ValorCorrecaoReal = parseFloat(
-          calculos.CalculaCorrecao(docs.MoValorDocumento, indiceCorrecao)
-        );
+        var ValorCorrecaoReal;
+        if (indiceCorrecao == 0) ValorCorrecaoReal = 0;
+        else {
+          ValorCorrecaoReal = parseFloat(
+            calculos.CalculaCorrecao(docs.MoValorDocumento, indiceCorrecao)
+          );
+        }
 
         let ValorOriginalSemCalc = docs.MoValorDocumento;
 
