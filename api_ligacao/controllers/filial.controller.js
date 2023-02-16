@@ -93,27 +93,113 @@ exports.novoContatoSite = async (req, res) => {
     host: "smtp.hostinger.com.br",
     service: "smtp.hostinger.com.br",
     port: 587,
-    secure: true,
+    secure: false,
     auth: {
       user: "jon.engenharia@calltech.xyz",
       pass: "k3k5x32@#",
     },
+    tls: {
+      ciphers: "SSLv3",
+    },
   });
 
   var emailASerEnviado = {
-    from: "jon.engenharia@calltech.xyz’",
+    from: "jon.engenharia@calltech.xyz",
     to: "vendas@calltech.xyz",
     subject: "Formulário Site - API",
-    text: "Estou te enviando este email com node.js",
+    text:
+      "nome: " +
+      nome +
+      "\ntelefone: " +
+      telefone +
+      "\nemail: " +
+      email +
+      "\nassunto: " +
+      assunto +
+      "\n mensagem: " +
+      mensagem,
   };
 
-  remetente.sendMail(emailASerEnviado, function (error) {
+  remetente.sendMail(emailASerEnviado, async function (error) {
     if (error) {
       console.log(error);
     } else {
       console.log("Email enviado com sucesso.");
     }
   });
+
+  if (nome != "") {
+    console.log(nome + " entrou");
+
+    // insere pessoa
+    await sequelize
+      .query(
+        `INSERT INTO Pessoas (FPesNome, JPesRazaoSocial, PesTipoPessoa, PesOrigem) 
+        Values ('${nome}','${nome}', 'J', 5) `,
+        {
+          type: QueryTypes.INSERT,
+        }
+      )
+      .catch((err) => {
+        res.status(500).json({
+          message: err.message + " Pessoa não inserida!",
+        });
+      });
+
+    var idPessoa;
+    await sequelize
+      .query("select Ident_Current('Pessoas') as PessoaID", {
+        type: QueryTypes.SELECT,
+      })
+      .then((data) => {
+        idPessoa = data[0].PessoaID;
+      });
+  }
+
+  if (idPessoa != "") {
+    await sequelize.query(
+      "Update Pessoas SET FPesCPF='2102" +
+        idPessoa +
+        "', JPesCNPJ='2102" +
+        idPessoa +
+        "',  PesComplementoPessoa ='Assunto: " +
+        assunto +
+        "\n Mensagem: " +
+        mensagem +
+        "\n Telefone: " +
+        telefone +
+        " - email: " +
+        email +
+        "' Where Pessoas_ID=" +
+        idPessoa,
+      { type: QueryTypes.UPDATE }
+    );
+  }
+
+  if (email !== "" || telefone !== "") {
+    var ddd;
+
+    if (telefone.length == 10 || telefone.length == 11) {
+      ddd = telefone.substring(0, 2);
+      telefone = telefone.substring(2, 20);
+      console.log(ddd + " " + telefone);
+    }
+  }
+
+  await sequelize.query(
+    "INSERT INTO PessoasContatos (PesPessoasID, PesTelefone, PesDDD, PesEmail, PesOrigemContato) " +
+      "Values(" +
+      idPessoa +
+      ",'" +
+      telefone +
+      "','" +
+      ddd +
+      "','" +
+      email +
+      "'," +
+      "'Site - API')",
+    { type: QueryTypes.INSERT }
+  );
 
   res.status(200).json("ok");
 };
