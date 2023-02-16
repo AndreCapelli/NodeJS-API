@@ -1,10 +1,7 @@
-const dbConfig = require("../config_banco/strcon.js");
+const dbConfig = require("../config/dbConfig.js");
 const Sequelize = require("sequelize");
 const { QueryTypes } = require("sequelize");
 
-/*
-  Chamada da configuração sendo feito em config/db.config.js
- */
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
   port: dbConfig.PORT,
@@ -25,30 +22,8 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   timezone: "-03:00", // for writing to database
 });
 
-//Teste conexão - authenticate já gera um select 1+1
-/*try {
-  sequelize.authenticate();
-  console.log("Connection has been established successfully.");
-} catch (error) {
-  console.error("Unable to connect to the database:", error);
-}*/
-
 const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 module.exports = db;
-
-//select de teste retornado em json
-sequelize
-  .query("SELECT * FROM CAMPANHAS  ", {
-    type: QueryTypes.SELECT,
-  })
-  .then((data) => {
-    if (!data) {
-      console.log("Não encontrado");
-    } else {
-      console.log(data[0]);
-    }
-  })
-  .catch((err) => {});

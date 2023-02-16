@@ -6,7 +6,6 @@ const db = require("./app/models");
 const dbrob = require("./robmar/models");
 const dbPortal = require("./portal/models");
 
-const https = require("https");
 const fs = require("fs");
 
 /* Sequelize.SYNC com o force true para limpar as tabelas
@@ -70,6 +69,7 @@ require("./app/routes/extracaoDivisao.route")(app);
 require("./app/routes/cloudInformacoesUsoTelas.route")(app);
 require("./robmar/routes/robmar.route")(app);
 require("./portal/routes/pessoas.route")(app);
+require("./api_ligacao/routes/filial.route")(app);
 
 // set port, listen for requests
 const PORT = 21000;
