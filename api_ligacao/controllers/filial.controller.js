@@ -91,13 +91,28 @@ exports.novoContatoSite = async (req, res) => {
 
   var remetente = nodemailer.createTransport({
     host: "smtp.hostinger.com.br",
-    service: "",
+    service: "smtp.hostinger.com.br",
     port: 587,
     secure: true,
     auth: {
       user: "jon.engenharia@calltech.xyz",
       pass: "k3k5x32@#",
     },
+  });
+
+  var emailASerEnviado = {
+    from: "jon.engenharia@calltech.xyz’",
+    to: "vendas@calltech.xyz",
+    subject: "Formulário Site - API",
+    text: "Estou te enviando este email com node.js",
+  };
+
+  remetente.sendMail(emailASerEnviado, function (error) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Email enviado com sucesso.");
+    }
   });
 
   res.status(200).json("ok");

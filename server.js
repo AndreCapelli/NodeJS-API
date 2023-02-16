@@ -77,15 +77,3 @@ const PORT = 21000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
-
-// https
-//   .createServer(
-//     {
-//       cert: fs.readFileSync("./SSL/code.crt"),
-//       key: fs.readFileSync("./SSL/code.key"),
-//     },
-//     app
-//   )
-//   .listen(PORT, () =>
-//     console.log(`HTTPS - Server is running on port ${PORT}.`)
-//   );
