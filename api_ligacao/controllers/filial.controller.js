@@ -95,8 +95,8 @@ exports.novoContatoSite = async (req, res) => {
     port: 587,
     secure: false,
     auth: {
-      user: "vinculo@calltech.xyz",
-      pass: "09_tecHxyz",
+      user: "contato@calltech.xyz",
+      pass: "07_tecHxyz",
     },
     tls: {
       ciphers: "SSLv3",
@@ -104,7 +104,7 @@ exports.novoContatoSite = async (req, res) => {
   });
 
   var emailASerEnviado = {
-    from: "vinculo@calltech.xyz",
+    from: "contato@calltech.xyz",
     to: "site@calltech.xyz",
     subject: "Formulário Site - API",
     text:
