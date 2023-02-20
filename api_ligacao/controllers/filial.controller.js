@@ -89,15 +89,14 @@ exports.novoContatoSite = async (req, res) => {
   var assunto = req.body.assunto;
   var mensagem = req.body.mensagem;
 
-  /*
   var remetente = nodemailer.createTransport({
     host: "smtp.hostinger.com.br",
     service: "smtp.hostinger.com.br",
     port: 587,
     secure: false,
     auth: {
-      user: "jon.engenharia@calltech.xyz",
-      pass: "k3k5x32@#",
+      user: "vinculo@calltech.xyz",
+      pass: "09_tecHxyz",
     },
     tls: {
       ciphers: "SSLv3",
@@ -105,8 +104,8 @@ exports.novoContatoSite = async (req, res) => {
   });
 
   var emailASerEnviado = {
-    from: "jon.engenharia@calltech.xyz",
-    to: "vendas@calltech.xyz",
+    from: "vinculo@calltech.xyz",
+    to: "site@calltech.xyz",
     subject: "Formulário Site - API",
     text:
       "nome: " +
@@ -127,7 +126,7 @@ exports.novoContatoSite = async (req, res) => {
     } else {
       console.log("Email enviado com sucesso.");
     }
-  });*/
+  });
 
   if (nome != "") {
     console.log(nome + " entrou");
@@ -188,10 +187,12 @@ exports.novoContatoSite = async (req, res) => {
   }
 
   await sequelize.query(
-    "INSERT INTO PessoasContatos (PesPessoasID, PesTelefone, PesDDD, PesEmail, PesOrigemContato) " +
+    "INSERT INTO PessoasContatos (PesPessoasID, PesContato, PesTelefone, PesDDD, PesEmail, PesOrigemContato) " +
       "Values(" +
       idPessoa +
       ",'" +
+      nome +
+      "','" +
       telefone +
       "','" +
       ddd +
