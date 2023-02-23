@@ -23,6 +23,12 @@ declaradas nos models */
 
 // app.use(cors(corsOptions));
 
+const corsOptions = {
+  origin: "*",
+};
+
+app.options(cors(corsOptions));
+
 app.use(cors());
 
 // parse requests of content-type - application/json
