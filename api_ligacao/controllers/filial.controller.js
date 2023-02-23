@@ -89,6 +89,7 @@ exports.novoContatoSite = async (req, res) => {
   var assunto = req.body.assunto;
   var mensagem = req.body.mensagem;
 
+  console.log(nome);
   res.status(200).json(req.body);
 
   /*  var remetente = nodemailer.createTransport({
