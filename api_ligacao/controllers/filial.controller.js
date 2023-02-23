@@ -90,7 +90,7 @@ exports.novoContatoSite = async (req, res) => {
   var mensagem = req.body.mensagem;
 
   console.log(nome);
-  res.status(200).json(req.body);
+  res.status(200).json(req);
 
   /*  var remetente = nodemailer.createTransport({
     host: "smtp.hostinger.com.br",
