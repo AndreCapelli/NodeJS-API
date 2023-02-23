@@ -89,6 +89,8 @@ exports.novoContatoSite = async (req, res) => {
   var assunto = req.body.assunto;
   var mensagem = req.body.mensagem;
 
+  res.status(200).json(req.body);
+
   /*  var remetente = nodemailer.createTransport({
     host: "smtp.hostinger.com.br",
     service: "smtp.hostinger.com.br",
@@ -126,7 +128,7 @@ exports.novoContatoSite = async (req, res) => {
     } else {
       console.log("Email enviado com sucesso.");
     }
-  });*/
+  });
 
   if (nome != "") {
     console.log(nome + " entrou");
@@ -203,5 +205,5 @@ exports.novoContatoSite = async (req, res) => {
     { type: QueryTypes.INSERT }
   );
 
-  res.status(200).json("ok");
+  res.status(200).json("ok");*/
 };
