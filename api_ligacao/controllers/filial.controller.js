@@ -92,7 +92,7 @@ exports.novoContatoSite = async (req, res) => {
   console.log(nome);
   res.status(200).json(req.body);
 
-  /*  var remetente = nodemailer.createTransport({
+  var remetente = nodemailer.createTransport({
     host: "smtp.hostinger.com.br",
     service: "smtp.hostinger.com.br",
     port: 587,
@@ -206,5 +206,5 @@ exports.novoContatoSite = async (req, res) => {
     { type: QueryTypes.INSERT }
   );
 
-  res.status(200).json("ok");*/
+  res.status(200).json("ok");
 };
