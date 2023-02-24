@@ -229,7 +229,7 @@ exports.novaMensagemWhats = async (req, res) => {
     Values (GetDate(),'${req.body.data.contactId}',${contato}) 
       end
       else
-        UPDATE MandeUmZapMensagens SET MaContatoCliente=${contato} where MaContatoID = '${req.body.data.contactId}'`,
+        UPDATE MandeUmZapMensagens SET MaDataHora = GetDate(), MaContatoCliente=${contato} where MaContatoID = '${req.body.data.contactId}'`,
         {
           type: QueryTypes.INSERT,
         }
