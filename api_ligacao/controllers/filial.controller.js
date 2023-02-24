@@ -219,17 +219,21 @@ exports.novaMensagemWhats = async (req, res) => {
     if (contato == true) contato = "0";
     else contato = "1";
 
-    console.log(contato);
+    console.log(req.body.event);
+
+    const jsonBodu = JSON.stringify(req.body);
+
+    //sim, perai mesma coisa kk agora vai
 
     await sequelize
       .query(
         `IF NOT EXISTS (SELECT MandeUmZapMensagens_ID From MandeUmZapMensagens Where MaContatoID='${req.body.data.contactId}')
       begin 
          INSERT INTO MandeUmZapMensagens (MaDataHora, MaContatoID, MaContatoCliente, MaJson) 
-    Values (GetDate(),'${req.body.data.contactId}',${contato}, '${req.body}') 
+    Values (GetDate(),'${req.body.data.contactId}',${contato}, '${jsonBodu}') 
       end
       else
-        UPDATE MandeUmZapMensagens SET MaDataHora = GetDate(), MaContatoCliente=${contato} where MaContatoID = '${req.body.data.contactId}'`,
+        UPDATE MandeUmZapMensagens SET MaDataHora = GetDate(), MaContatoCliente=${contato}, MaJson ='${jsonBodu}' where MaContatoID = '${req.body.data.contactId}'`,
         {
           type: QueryTypes.INSERT,
         }
