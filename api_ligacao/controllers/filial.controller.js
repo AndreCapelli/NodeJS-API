@@ -208,3 +208,37 @@ exports.novoContatoSite = async (req, res) => {
 
   res.status(200).json("ok");
 };
+
+exports.novaMensagemWhats = async (req, res) => {
+  if (
+    req.body.event == "message.updated" ||
+    req.body.event == "message.created"
+  ) {
+    var contato = req.body.data.isFromMe;
+
+    if (contato == true) contato = "0";
+    else contato = "1";
+
+    console.log(contato);
+
+    await sequelize
+      .query(
+        `IF NOT EXISTS (SELECT MandeUmZapMensagens_ID From MandeUmZapMensagens Where MaContatoID='${req.body.data.contactId}')
+      begin 
+         INSERT INTO MandeUmZapMensagens (MaDataHora, MaContatoID, MaContatoCliente) 
+    Values (GetDate(),'${req.body.data.contactId}',${contato}) 
+      end
+      else
+        UPDATE MandeUmZapMensagens SET MaContatoCliente=${contato} where MaContatoID = '${req.body.data.contactId}'`,
+        {
+          type: QueryTypes.INSERT,
+        }
+      )
+      .catch((err) => {
+        res.status(500).json({
+          message: err.message + " Não Inserido!",
+        });
+      });
+    res.status(201).json("ok");
+  } else res.status(200).json("outro evento");
+};
