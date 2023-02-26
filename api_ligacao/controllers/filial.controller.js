@@ -3,6 +3,7 @@ const Sequelize = require("sequelize");
 const sequelize = db.sequelize;
 const { QueryTypes, json } = require("sequelize");
 const nodemailer = require("nodemailer");
+const axios = require("axios");
 
 exports.apiLife = (req, res) => {
   console.log("api ligações da call está viva!");
@@ -219,30 +220,67 @@ exports.novaMensagemWhats = async (req, res) => {
     if (contato == true) contato = "0";
     else contato = "1";
 
-    console.log(req.body.event);
+    const id = req.body.data.contactId;
 
-    const jsonBodu = JSON.stringify(req.body);
+    if (typeof id != "undefined") {
+      async function getNomeContato() {
+        const url = "https://calltech.mandeumzap.com.br/api/v1/contacts/";
+        const params = {
+          parametro2: req.body.data.contactId,
+        };
 
-    //sim, perai mesma coisa kk agora vai
+        const config = {
+          headers: {
+            Authorization: "Bearer eb14acd8682647e00459438255295d99263af97c",
+          },
+          params: params,
+        };
 
-    await sequelize
-      .query(
-        `IF NOT EXISTS (SELECT MandeUmZapMensagens_ID From MandeUmZapMensagens Where MaContatoID='${req.body.data.contactId}')
+        try {
+          const res = await axios.get(url + req.body.data.contactId, config);
+          // console.log(res.url);
+          // console.log(res.data.name);
+          return res.data;
+        } catch (error) {
+          console.log("erro " + error.message);
+          return "";
+        }
+      } // fim getNomeContato
+
+      const nomeContato = await getNomeContato();
+
+      vName = nomeContato.name;
+      vAlternativeName = nomeContato.alternativeName;
+
+      await sequelize
+        .query(
+          `IF NOT EXISTS (SELECT MandeUmZapMensagens_ID From MandeUmZapMensagens Where MaContatoID='${
+            req.body.data.contactId
+          }')
       begin 
-         INSERT INTO MandeUmZapMensagens (MaDataHora, MaContatoID, MaContatoCliente, MaJson) 
-    Values (GetDate(),'${req.body.data.contactId}',${contato}, '${jsonBodu}') 
+         INSERT INTO MandeUmZapMensagens (MaDataHora, MaContatoID, MaContatoCliente, MaJson, MaName, MaAlternativeName) 
+    Values (GetDate(),'${
+      req.body.data.contactId
+    }',${contato}, '${JSON.stringify(
+            req.body
+          )}','${vName}','${vAlternativeName}') 
       end
       else
-        UPDATE MandeUmZapMensagens SET MaDataHora = GetDate(), MaContatoCliente=${contato}, MaJson ='${jsonBodu}' where MaContatoID = '${req.body.data.contactId}'`,
-        {
-          type: QueryTypes.INSERT,
-        }
-      )
-      .catch((err) => {
-        res.status(500).json({
-          message: err.message + " Não Inserido!",
+        UPDATE MandeUmZapMensagens SET MaDataHora = GetDate(), MaContatoCliente=${contato}, MaJson ='${JSON.stringify(
+            req.body
+          )}', MaName='${vName}', MaAlternativeName='${vAlternativeName}' where MaContatoID = '${
+            req.body.data.contactId
+          }'`,
+          {
+            type: QueryTypes.INSERT,
+          }
+        )
+        .catch((err) => {
+          res.status(500).json({
+            message: err.message + "Não Inserido!",
+          });
         });
-      });
-    res.status(201).json("ok");
+      res.status(201).json("ok");
+    } else res.status(400).json("undefined");
   } else res.status(200).json("outro evento");
 };
