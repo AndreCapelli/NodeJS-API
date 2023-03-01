@@ -100,7 +100,7 @@ exports.novoContatoSite = async (req, res) => {
     secure: false,
     auth: {
       user: "contato@calltech.xyz",
-      pass: "07_tecHxyz",
+      pass: "C@11743@!!Tatu",
     },
     tls: {
       ciphers: "SSLv3",
