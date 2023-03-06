@@ -732,6 +732,7 @@ exports.buscaCombo = async (req, res) => {
           else DocumentosID = DocumentosID + "," + docs.Movimentacoes_ID;
         }
 
+        //teste
         return {
           ValorFinal: parseFloat(ValorFinal),
           ValorTotal: ValorAtualizadoTotal,
