@@ -268,6 +268,7 @@ exports.findOne = async (req, res) => {
     var politicas = await Politicas.findAll({
       where: {
         PePessoasID: dadosCredor.CredorID,
+        PeDescricao: { [Op.not]: "NULL" },
       },
       order: [["PePoliticaPrincipal", "DESC"]],
     })
@@ -282,7 +283,7 @@ exports.findOne = async (req, res) => {
         });
       });
 
-    // console.log("Juros politica " + politicas.PeJuros);
+    //  console.log("Juros politica " + politicas.PeJuros);
 
     var docs = await Movimentacoes.findAll({
       where: {
@@ -325,10 +326,14 @@ exports.findOne = async (req, res) => {
           );
         }
 
+        var ValorDocumento = parseFloat(docs.MoValorDocumento);
+
         let ValorJurosReal = parseFloat(
           calculos.CalculaJuros(
-            docs.MoValorDocumento +
-              (politicas.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0),
+            ValorDocumento +
+              parseFloat(
+                politicas.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0
+              ),
             politicas.PeJuros,
             funcoes.CalculaDias(
               funcoes.ArrumaData(docs.MoDataVencimento),

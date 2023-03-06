@@ -133,7 +133,7 @@ exports.novoContatoSite = async (req, res) => {
   });
 
   if (nome != "") {
-    console.log(nome + " entrou");
+    //console.log(nome + " entrou");
 
     // insere pessoa
     await sequelize
@@ -258,17 +258,17 @@ exports.novaMensagemWhats = async (req, res) => {
             req.body.data.contactId
           }')
       begin 
-         INSERT INTO MandeUmZapMensagens (MaDataHora, MaContatoID, MaContatoCliente, MaJson, MaName, MaAlternativeName) 
+         INSERT INTO MandeUmZapMensagens (MaDataHora, MaContatoID, MaContatoCliente, /*MaJson,*/ MaName, MaAlternativeName) 
     Values (GetDate(),'${
       req.body.data.contactId
-    }',${contato}, '${JSON.stringify(
+    }',${contato},/* '${JSON.stringify(
             req.body
-          )}','${vName}','${vAlternativeName}') 
+          )}',*/'${vName}','${vAlternativeName}') 
       end
       else
-        UPDATE MandeUmZapMensagens SET MaDataHora = GetDate(), MaContatoCliente=${contato}, MaJson ='${JSON.stringify(
+        UPDATE MandeUmZapMensagens SET MaDataHora = GetDate(), MaContatoCliente=${contato}, /*MaJson ='${JSON.stringify(
             req.body
-          )}', MaName='${vName}', MaAlternativeName='${vAlternativeName}' where MaContatoID = '${
+          )}',*/ MaName='${vName}', MaAlternativeName='${vAlternativeName}' where MaContatoID = '${
             req.body.data.contactId
           }'`,
           {

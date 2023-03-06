@@ -184,8 +184,11 @@ exports.RetornaIndiceTabela = async (
 
   if (IndiceAtual == 0) return 0;
 
-  const IndiceFinal =
-    IndiceAtual.replace(",", ".") / indiceAntigo.replace(",", ".");
+  const IndiceFinal = parseFloat(
+    parseFloat(IndiceAtual) / parseFloat(indiceAntigo)
+  );
+
+  console.log("indice Final: " + IndiceFinal);
 
   if (nomeIndice != "IPCA") return IndiceFinal;
   else IndiceAtual;
