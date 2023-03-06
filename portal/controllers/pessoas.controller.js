@@ -724,7 +724,7 @@ exports.buscaCombo = async (req, res) => {
         // console.log(Desconto);
 
         if (Desconto > 0) {
-          var ValorFinal = (ValorAtualizadoTotal * Desconto) / 100;
+          var ValorFinal = parseFloat((ValorAtualizadoTotal * Desconto) / 100);
         }
 
         if (index == 0) {
@@ -733,7 +733,7 @@ exports.buscaCombo = async (req, res) => {
         }
 
         return {
-          ValorFinal: parseFloat(ValorFinal.toFixed(2)),
+          ValorFinal: parseFloat(ValorFinal),
           ValorTotal: ValorAtualizadoTotal,
           ValorOriginalSemCalc: ValorOriginalSemCalc,
           ValorTotalJuros: ValorJurosReal,
