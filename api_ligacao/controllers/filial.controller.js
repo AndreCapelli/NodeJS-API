@@ -99,8 +99,8 @@ exports.novoContatoSite = async (req, res) => {
     port: 587,
     secure: false,
     auth: {
-      user: "contato@calltech.xyz",
-      pass: "C@11743@!!Tatu",
+      user: "vinculo@calltech.xyz",
+      pass: "09_tecHxyz",
     },
     tls: {
       ciphers: "SSLv3",
