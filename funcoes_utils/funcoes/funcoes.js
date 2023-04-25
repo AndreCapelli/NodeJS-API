@@ -182,7 +182,9 @@ exports.RetornaIndiceTabela = async (
     });
   //fim indice atual
 
-  if (IndiceAtual == 0) return 0;
+  if (IndiceAtual == 0 || indiceAntigo == 0) return 0;
+
+  console.log("Chegou aqui");
 
   const IndiceFinal = parseFloat(
     parseFloat(IndiceAtual) / parseFloat(indiceAntigo)

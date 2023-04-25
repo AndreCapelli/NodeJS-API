@@ -319,6 +319,9 @@ exports.findOne = async (req, res) => {
         );
 
         var ValorCorrecaoReal;
+
+        console.log("Indice Correcao" + indiceCorrecao);
+
         if (indiceCorrecao == 0) ValorCorrecaoReal = 0;
         else {
           ValorCorrecaoReal = parseFloat(
@@ -327,6 +330,9 @@ exports.findOne = async (req, res) => {
         }
 
         var ValorDocumento = parseFloat(docs.MoValorDocumento);
+        console.log("ValorDoc " + ValorDocumento);
+        console.log("baseCalculo " + politicas.PeBaseCalculoJuros);
+        console.log("CorrecaoReal " + ValorCorrecaoReal);
 
         let ValorJurosReal = parseFloat(
           calculos.CalculaJuros(
