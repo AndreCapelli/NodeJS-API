@@ -168,6 +168,45 @@ exports.novoContatoSite = async (req, res) => {
     { type: QueryTypes.INSERT }
   );
 
+  var remetente = nodemailer.createTransport({
+    host: "smtp.hostinger.com.br",
+    service: "smtp.hostinger.com.br",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASSWORD,
+    },
+    tls: {
+      ciphers: "SSLv3",
+    },
+  });
+
+  var emailASerEnviado = {
+    from: process.env.MAIL_USER,
+    to: process.env.MAIL_DESTINATION,
+    subject: "Formulário Site - API",
+    text:
+      "nome: " +
+      nome +
+      "\ntelefone: " +
+      telefone +
+      "\nemail: " +
+      email +
+      "\nassunto: " +
+      assunto +
+      "\n mensagem: " +
+      mensagem,
+  };
+
+  remetente.sendMail(emailASerEnviado, async function (error) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Email enviado com sucesso.");
+    }
+  });
+
   res.status(200).json("ok");
 };
 
