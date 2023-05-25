@@ -102,6 +102,8 @@ exports.RetornaIndiceTabela = async (
   let IndiceAtual;
   let nomeIndice;
 
+  console.log("meu indice " + TabelaIndiceID);
+
   //nome indice
   const tabelaNome = await sequelize
     .query(
@@ -115,7 +117,7 @@ exports.RetornaIndiceTabela = async (
       }
       //encontrou registro, trato o mesmo
       else {
-        nomeIndice = data[0].TaNome;
+        nomeIndice = parseFloat(data[0].TaNome);
       }
     })
     .catch((err) => {
@@ -138,7 +140,7 @@ exports.RetornaIndiceTabela = async (
       }
       //encontrou registro, trato o mesmo
       else {
-        indiceAntigo = data[0].TaIndice;
+        indiceAntigo = data[0].TaIndice.replace(",", ".");
         if (indiceAntigo === 0) {
           console.log("Indice antigo = 0");
           indiceAntigo = 0;
@@ -151,6 +153,8 @@ exports.RetornaIndiceTabela = async (
       return -1;
     });
   //fim indice antigo
+
+  console.log("indice antigo: " + indiceAntigo);
 
   //indice atual
   const tabelaIndiceAtual = await sequelize
@@ -168,7 +172,7 @@ exports.RetornaIndiceTabela = async (
       }
       //encontrou registro, trato o mesmo
       else {
-        IndiceAtual = data[0].TaIndice;
+        IndiceAtual = data[0].TaIndice.replace(",", ".");
         if (indiceAntigo == 0) {
           console.log("Indice atual = 0");
           indiceAntigo = 0;
@@ -184,12 +188,11 @@ exports.RetornaIndiceTabela = async (
 
   if (IndiceAtual == 0 || indiceAntigo == 0) return 0;
 
-  console.log("Chegou aqui");
-
-  const IndiceFinal = parseFloat(
-    parseFloat(IndiceAtual) / parseFloat(indiceAntigo)
+  console.log(
+    "indice antigo: " + indiceAntigo + " indice atuaxl: " + IndiceAtual
   );
 
+  const IndiceFinal = parseFloat(IndiceAtual / parseFloat(indiceAntigo));
   console.log("indice Final: " + IndiceFinal);
 
   if (nomeIndice != "IPCA") return IndiceFinal;

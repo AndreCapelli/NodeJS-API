@@ -269,6 +269,7 @@ exports.findOne = async (req, res) => {
     var politicas = await Politicas.findAll({
       where: {
         PePessoasID: dadosCredor.CredorID,
+        //PessoasPoliticaCobrancas_ID: 17832,
         PeDescricao: { [Op.not]: "NULL" },
       },
       order: [["PePoliticaPrincipal", "DESC"]],
@@ -321,7 +322,7 @@ exports.findOne = async (req, res) => {
 
         var ValorCorrecaoReal;
 
-        console.log("Indice Correcao" + indiceCorrecao);
+        console.log("Indice Correcao " + indiceCorrecao);
 
         if (indiceCorrecao == 0) ValorCorrecaoReal = 0;
         else {
@@ -422,6 +423,7 @@ exports.findOne = async (req, res) => {
           ValorMultaReal +
           ValorCorrecaoReal +
           ValorHonorarioRealTotal;
+        console.log("valor atualizado total " + ValorAtualizadoTotal);
 
         return {
           Movimentacoes_ID: docs.Movimentacoes_ID,
@@ -450,7 +452,9 @@ exports.findOne = async (req, res) => {
           MoValorHonorarioSobMulta: ValorHonorarioSobMulta,
           MoValorHonorarioSobCorrecao: ValorHonorarioSobCorrecao,
           MoValorHonorarioTotal: ValorHonorarioRealTotal.toFixed(2),
+
           MoValorAtualizado: ValorAtualizadoTotal.toFixed(2),
+
           MoDataVencimento: docs.MoDataVencimento,
           MoNumeroDocumento: docs.MoNumeroDocumento,
           MoTipoDocumento: docs.MoTipoDocumento,
