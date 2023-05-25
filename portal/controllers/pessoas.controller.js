@@ -733,11 +733,14 @@ exports.buscaCombo = async (req, res) => {
 
         let Desconto = element.PeDescontoMaximoPercent;
 
-        // console.log(Desconto);
+        if (Desconto == null) Desconto = 0;
+
+        console.log("desconto " + Desconto);
 
         if (Desconto > 0) {
           var ValorFinal = parseFloat((ValorAtualizadoTotal * Desconto) / 100);
-        }
+          console.log("valor final " + ValorFinal);
+        } else ValorFinal = 0;
 
         if (index == 0) {
           if (DocumentosID == "") DocumentosID = docs.Movimentacoes_ID;
