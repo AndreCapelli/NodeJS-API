@@ -133,6 +133,7 @@ exports.findOne = async (req, res) => {
     return;
   }
 
+  //registra logo
   await sequelize
     .query(
       "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData) " +
@@ -356,11 +357,12 @@ exports.findOne = async (req, res) => {
           )
         );
 
-        let MoValorAtualizadoSemHonorario =
+        let MoValorAtualizadoSemHonorario = (
           docs.MoValorDocumento +
           ValorJurosReal +
           ValorMultaReal +
-          ValorCorrecaoReal;
+          ValorCorrecaoReal
+        ).toFixed(2);
 
         if (politicas.PeHonorarioSobVA) {
           var ValorHonorarioReal = parseFloat(
@@ -436,17 +438,18 @@ exports.findOne = async (req, res) => {
           MoValorJuros: ValorJurosReal,
           MoPorcentagemMulta: politicas.PeMulta,
           MoValorMulta: ValorMultaReal,
-          MoValorAtualizadoSemHonorario:
+          MoValorAtualizadoSemHonorario: (
             docs.MoValorDocumento +
             ValorJurosReal +
             ValorMultaReal +
-            ValorCorrecaoReal,
+            ValorCorrecaoReal
+          ).toFixed(2),
           MoHonorariosPorcentagem: politicas.PeHonorario,
           MoValorHonorarios: ValorHonorarioReal,
           MoValorHonorarioSobJuros: ValorHonorariosSobJuros,
           MoValorHonorarioSobMulta: ValorHonorarioSobMulta,
           MoValorHonorarioSobCorrecao: ValorHonorarioSobCorrecao,
-          MoValorHonorarioTotal: ValorHonorarioRealTotal,
+          MoValorHonorarioTotal: ValorHonorarioRealTotal.toFixed(2),
           MoValorAtualizado: ValorAtualizadoTotal.toFixed(2),
           MoDataVencimento: docs.MoDataVencimento,
           MoNumeroDocumento: docs.MoNumeroDocumento,
@@ -464,10 +467,9 @@ exports.findOne = async (req, res) => {
     testeJson["CredorDocumento" + index] = dadosCredor.CredorDocumento;
     testeJson["CredorApelido" + index] = dadosCredor.CredorApelido;
     testeJson["Politica" + index] = politicas.PeDescricao;
-    testeJson["ValorAtualizado" + index] = atualizaDocs.reduce(
-      (a, b) => a + b,
-      0
-    );
+    testeJson["ValorAtualizado" + index] = atualizaDocs
+      .reduce((a, b) => a + b, 0)
+      .toFixed(2);
     testeJson["QuantidadeDocs" + index + "_" + dadosCredor.CredorID] =
       docsAtualizados.length;
     testeJson["ArrayDocs" + index] = docsAtualizados;
@@ -1200,7 +1202,7 @@ exports.RealizaAcordo = async (req, res) => {
       .query(
         "UPDATE Movimentacoes SET MoDestinoAcordoID=" +
           AcordoID +
-          " Where Movimentacoes_ID=" +
+          ", MoStatusMovimentacao = 1 Where Movimentacoes_ID=" +
           element.Movimentacoes_ID,
         { type: QueryTypes.UPDATE }
       )
