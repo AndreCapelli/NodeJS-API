@@ -269,7 +269,7 @@ exports.findOne = async (req, res) => {
     var politicas = await Politicas.findAll({
       where: {
         PePessoasID: dadosCredor.CredorID,
-        //PessoasPoliticaCobrancas_ID: 17832,
+        //PessoasPoliticaCobrancas_ID: 17833,
         PeDescricao: { [Op.not]: "NULL" },
       },
       order: [["PePoliticaPrincipal", "DESC"]],
@@ -466,6 +466,10 @@ exports.findOne = async (req, res) => {
       return docs.MoValorDocumento;
     });
 
+    var valorAtual = await docsAtualizados.map((docs) => {
+      return parseFloat(docs.MoValorAtualizado);
+    });
+
     testeJson["CredorID" + index] = dadosCredor.CredorID;
     testeJson["CredorNome" + index] = dadosCredor.CredorNome;
     testeJson["CredorDocumento" + index] = dadosCredor.CredorDocumento;
@@ -476,6 +480,9 @@ exports.findOne = async (req, res) => {
       .toFixed(2);
     testeJson["QuantidadeDocs" + index + "_" + dadosCredor.CredorID] =
       docsAtualizados.length;
+    testeJson["ValorAtualizadoVerdadeiro" + index] = valorAtual
+      .reduce((a, b) => a + b, 0)
+      .toFixed(2);
     testeJson["ArrayDocs" + index] = docsAtualizados;
   }
 
