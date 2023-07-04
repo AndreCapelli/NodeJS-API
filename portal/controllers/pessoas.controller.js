@@ -1429,3 +1429,10 @@ exports.johnTeste = async (req, res) => {
 
   res.send("oi").status(200);
 };
+
+exports.OmiePedido = async (req, res) => {
+  // console.log("ok");
+
+  // res.send("funciona").status(200);
+  console.log(req.body);
+};

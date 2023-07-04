@@ -7,6 +7,7 @@ module.exports = (app) => {
   router.post("/atualizaEmail/", pessoa.atualizaEmail);
   router.get("/combo/:DocInad&:DocCli", pessoa.buscaCombo);
   router.post("/RealizaAcordo/", pessoa.RealizaAcordo);
+  router.post("/omie_Pedido/", pessoa.OmiePedido);
 
   app.use("/portal", router);
 };
