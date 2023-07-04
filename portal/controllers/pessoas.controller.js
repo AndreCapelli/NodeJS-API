@@ -1429,10 +1429,40 @@ exports.johnTeste = async (req, res) => {
 
   res.send("oi").status(200);
 };
-
 exports.OmiePedido = async (req, res) => {
-  // console.log("ok");
+  console.log("bateu");
 
-  // res.send("funciona").status(200);
-  console.log(req.body);
+  const data = JSON.stringify(req.body);
+
+  const options = {
+    hostname: "localhost:21000",
+    port: 443,
+    path: "/portal/omie_Pedido",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": data.length,
+    },
+  };
+
+  const request = https.request(options, (response) => {
+    let responseData = "";
+
+    response.on("data", (chunk) => {
+      responseData += chunk;
+    });
+
+    response.on("end", () => {
+      console.log("Resposta:", responseData);
+      res.send(responseData).status(200);
+    });
+  });
+
+  request.on("error", (error) => {
+    console.error("Erro na requisição:", error);
+    res.status(500).send("Erro na requisição");
+  });
+
+  request.write(data);
+  request.end();
 };
