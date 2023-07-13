@@ -88,13 +88,13 @@ require("./omie/routes/omieRoute.route.js")(apps);
 // set port, listen for requests
 const PORT = 21000;
 //const PORT = 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-});
-
-// https.createServer(options, apps).listen(443, () => {
-//   console.log("Servidor HTTPS iniciado na porta 443");
+// app.listen(PORT, () => {
+//   console.log(`Server is running on port ${PORT}.`);
 // });
+
+https.createServer(options, apps).listen(443, () => {
+  console.log("Servidor HTTPS iniciado na porta 443");
+});
 
 // apps.get("/", (req, res) => {
 //   res.json({ message: "Welcome - API MaxMobile https" });
