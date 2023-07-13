@@ -1,12 +1,27 @@
 const express = require("express");
+const https = require("https"); //j
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
+const apps = express(); //j
 const db = require("./app/models");
 const dbrob = require("./robmar/models");
 const dbPortal = require("./portal/models");
 
 const fs = require("fs");
+
+const options = {
+  key: fs.readFileSync("./SSL/code.key"),
+  cert: fs.readFileSync("./SSL/code.crt"),
+};
+
+https.createServer(options, apps).listen(443, () => {
+  console.log("Servidor HTTPS iniciado na porta 443");
+});
+
+apps.get("/", (req, res) => {
+  res.json({ message: "Welcome - API MaxMobile https" });
+});
 
 /* Sequelize.SYNC com o force true para limpar as tabelas
 declaradas nos models */
@@ -76,6 +91,7 @@ require("./app/routes/cloudInformacoesUsoTelas.route")(app);
 require("./robmar/routes/robmar.route")(app);
 require("./portal/routes/pessoas.route")(app);
 require("./api_ligacao/routes/filial.route")(app);
+require("./omie/routes/omieRoute.route.js")(apps);
 
 // set port, listen for requests
 const PORT = 21000;
