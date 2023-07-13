@@ -92,10 +92,10 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
 
-// https.createServer(options, apps).listen(443, () => {
-//   console.log("Servidor HTTPS iniciado na porta 443");
-// });
+https.createServer(options, apps).listen(8443, () => {
+  console.log("Servidor HTTPS iniciado na porta 8443");
+});
 
-// apps.get("/", (req, res) => {
-//   res.json({ message: "Welcome - API MaxMobile https" });
-// });
+apps.get("/", (req, res) => {
+  res.json({ message: "Welcome - API MaxMobile https" });
+});
