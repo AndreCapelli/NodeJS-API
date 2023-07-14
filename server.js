@@ -88,11 +88,11 @@ require("./omie/routes/omieRoute.route.js")(apps);
 // set port, listen for requests
 const PORT = 21000;
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server is running on port ${PORT}.`);
+// });
 
-https.createServer(options, apps).listen(8443, () => {
+https.createServer(options, apps).listen(21000, () => {
   console.log("Servidor HTTPS iniciado na porta 8443");
 });
 
