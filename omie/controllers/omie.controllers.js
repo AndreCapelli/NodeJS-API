@@ -48,6 +48,7 @@ exports.OmiePedido = async (req, res) => {
 exports.OmieProduto = async (req, res) => {
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
     async function apagar() {
+      console.log("apagando");
       await sequelize
         .query(
           `DELETE FROM integracao_Omie WHERE inSetor = 'Produto' AND inCodigo =
