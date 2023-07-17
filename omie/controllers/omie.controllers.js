@@ -12,7 +12,7 @@ exports.OmiePedido = async (req, res) => {
     async function apagar() {
       await sequelize
         .query(
-          `DELETE FROM WHERE inSetor = 'Pedido' AND Replace(inCodigo,' ','') =
+          `DELETE FROM integracao_Omie WHERE inSetor = 'Pedido' AND Replace(inCodigo,' ','') =
       '${codigo}'`,
           {
             type: QueryTypes.DELETE,
@@ -111,7 +111,7 @@ exports.OmieCliente = async (req, res) => {
     async function apagar() {
       await sequelize
         .query(
-          `DELETE FROM WHERE inSetor = 'Cliente' AND Replace(inCodigo,' ','') =
+          `DELETE FROM integracao_Omie WHERE inSetor = 'Cliente' AND Replace(inCodigo,' ','') =
     '${codigo}'`,
           {
             type: QueryTypes.DELETE,
