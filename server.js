@@ -15,8 +15,8 @@ const options = {
   cert: fs.readFileSync("./SSL/code.crt"),
 };
 
-https.createServer(options, apps).listen(4443, () => {
-  console.log("Servidor HTTPS iniciado na porta 443");
+https.createServer(options, apps).listen(21443, () => {
+  console.log("Servidor HTTPS iniciado na porta 21443");
 });
 
 apps.get("/", (req, res) => {
