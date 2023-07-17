@@ -47,12 +47,16 @@ exports.OmiePedido = async (req, res) => {
 
 exports.OmieProduto = async (req, res) => {
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
+    const codigo = req.body.event.codigo_produto;
+
+    codigo = codigo.replace(" ", "");
+
     async function apagar() {
       console.log("apagando");
       await sequelize
         .query(
           `DELETE FROM integracao_Omie WHERE inSetor = 'Produto' AND Replace(inCodigo,' ','') =
-        '${req.body.event.codigo_produto.replace(/\s/g, "")}'`,
+        '${codigo}'`,
           {
             type: QueryTypes.DELETE,
           }
@@ -72,10 +76,7 @@ exports.OmieProduto = async (req, res) => {
           `INSERT INTO integracao_Omie (inJson, inSetor, inData, inCodigo) 
         Values ('${JSON.stringify(
           req.body
-        )}','Produto', GetDate(),'${req.body.event.codigo_produto.replace(
-            /\s/g,
-            ""
-          )}')`,
+        )}','Produto', GetDate(),'${codigo}')`,
           {
             type: QueryTypes.INSERT,
           }
