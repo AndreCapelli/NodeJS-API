@@ -6,6 +6,20 @@ exports.OmiePedido = async (req, res) => {
   console.log("Pedido: " + JSON.stringify(req.body));
 
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
+    await sequelize
+      .query(
+        `DELETE FROM WHERE inSetor = 'Pedido' AND inCodigo =
+      '${req.body.event.idPedido}'`,
+        {
+          type: QueryTypes.DELETE,
+        }
+      )
+      .catch((err) => {
+        res.status(500).json({
+          message: err.message + " Omie!",
+        });
+      });
+
     async function insereContato() {
       await sequelize
         .query(
@@ -33,6 +47,20 @@ exports.OmiePedido = async (req, res) => {
 
 exports.OmieProduto = async (req, res) => {
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
+    await sequelize
+      .query(
+        `DELETE FROM WHERE inSetor = 'Produto' AND inCodigo =
+        '${req.body.event.codigo_produto}'`,
+        {
+          type: QueryTypes.DELETE,
+        }
+      )
+      .catch((err) => {
+        res.status(500).json({
+          message: err.message + " Omie!",
+        });
+      });
+
     async function insereContato() {
       await sequelize
         .query(
@@ -60,6 +88,20 @@ exports.OmieProduto = async (req, res) => {
 
 exports.OmieCliente = async (req, res) => {
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
+    await sequelize
+      .query(
+        `DELETE FROM WHERE inSetor = 'Cliente' AND inCodigo =
+    '${req.body.event.codigo_cliente_omie}'`,
+        {
+          type: QueryTypes.DELETE,
+        }
+      )
+      .catch((err) => {
+        res.status(500).json({
+          message: err.message + " Omie!",
+        });
+      });
+
     async function insereContato() {
       await sequelize
         .query(
