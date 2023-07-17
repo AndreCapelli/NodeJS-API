@@ -15,9 +15,9 @@ const options = {
   cert: fs.readFileSync("./SSL/code.crt"),
 };
 
-// https.createServer(options, apps).listen(443, () => {
-//   console.log("Servidor HTTPS iniciado na porta 443");
-// });
+https.createServer(options, apps).listen(443, () => {
+  console.log("Servidor HTTPS iniciado na porta 443");
+});
 
 apps.get("/", (req, res) => {
   res.json({ message: "Welcome - API MaxMobile https" });
