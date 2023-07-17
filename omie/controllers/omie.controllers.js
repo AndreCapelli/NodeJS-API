@@ -104,7 +104,7 @@ exports.OmieProduto = async (req, res) => {
 exports.OmieCliente = async (req, res) => {
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
     var codigo = req.body.event.codigo_cliente_omie.toString();
-    codigo = codigo.replace(" ", "");
+    codigo = codigo.replace(/\s/g, "");
 
     async function apagar() {
       await sequelize
