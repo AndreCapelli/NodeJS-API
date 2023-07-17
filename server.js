@@ -15,8 +15,8 @@ const options = {
   cert: fs.readFileSync("./SSL/code.crt"),
 };
 
-https.createServer(options, apps).listen(4443, () => {
-  console.log("Servidor HTTPS iniciado na porta 4443");
+https.createServer(options, apps).listen(443, () => {
+  console.log("Servidor HTTPS iniciado na porta 443");
 });
 
 apps.get("/", (req, res) => {
@@ -91,7 +91,7 @@ require("./app/routes/cloudInformacoesUsoTelas.route")(app);
 require("./robmar/routes/robmar.route")(app);
 require("./portal/routes/pessoas.route")(app);
 require("./api_ligacao/routes/filial.route")(app);
-//require("./omie/routes/omieRoute.route")(apps);
+require("./omie/routes/omieRoute.route")(apps);
 
 // set port, listen for requests
 const PORT = 21000;
