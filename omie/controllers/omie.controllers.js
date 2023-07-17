@@ -50,7 +50,7 @@ exports.OmieProduto = async (req, res) => {
     async function apagar() {
       await sequelize
         .query(
-          `DELETE FROM WHERE inSetor = 'Produto' AND inCodigo =
+          `DELETE FROM integracao_Omie WHERE inSetor = 'Produto' AND inCodigo =
         '${req.body.event.codigo_produto}'`,
           {
             type: QueryTypes.DELETE,
