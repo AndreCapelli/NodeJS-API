@@ -11,7 +11,7 @@ exports.OmiePedido = async (req, res) => {
         `INSERT INTO integracao_Omie (inJson, inSetor, inData, inDescricaoEtapa, inCodigo) 
         Values ('${JSON.stringify(req.body)}','Pedido', GetDate(),' ${
           req.body.etapa + " " + req.body.etapaDescr
-        },' ${req.body.event.idPedido})`,
+        }',' ${req.body.event.idPedido}')`,
         {
           type: QueryTypes.INSERT,
         }
