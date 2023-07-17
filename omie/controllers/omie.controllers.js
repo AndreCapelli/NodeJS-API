@@ -59,6 +59,28 @@ exports.OmieProduto = async (req, res) => {
 };
 
 exports.OmieCliente = async (req, res) => {
-  console.log("Produto: " + req.body);
+  if (JSON.stringify(req.body) != '{"ping":"omie"}') {
+    async function insereContato() {
+      await sequelize
+        .query(
+          `INSERT INTO integracao_Omie (inJson, inSetor, inData, inDescricaoEtapa, inCodigo) 
+        Values ('${JSON.stringify(req.body)}','Cliente', GetDate(),' ${
+            /*req.body.event.etapa +*/ " - " /*+ req.body.event.etapaDescr*/
+          }',' */${req.body.event.idPedido}/*5050')`,
+          {
+            type: QueryTypes.INSERT,
+          }
+        )
+        .catch((err) => {
+          res.status(500).json({
+            message: err.message + " Omie!",
+          });
+        });
+      return;
+    }
+
+    await insereContato();
+  }
+
   res.status(200).send("ok");
 };
