@@ -68,7 +68,7 @@ exports.OmieProduto = async (req, res) => {
         });
     }
 
-    await apagar;
+    await apagar();
 
     async function insereContato() {
       await sequelize
