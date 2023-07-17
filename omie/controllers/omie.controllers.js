@@ -31,9 +31,9 @@ exports.OmiePedido = async (req, res) => {
       await sequelize
         .query(
           `INSERT INTO integracao_Omie (inJson, inSetor, inData, inDescricaoEtapa, inCodigo) 
-          Values ('${JSON.stringify(req.body)}','Pedido', GetDate(),' ${
+          Values ('${JSON.stringify(req.body)}','Pedido', GetDate(),'${
             req.body.event.etapa + " - " + req.body.event.etapaDescr
-          }',' ${codigo}')`,
+          }','${codigo}')`,
           {
             type: QueryTypes.INSERT,
           }
@@ -132,7 +132,7 @@ exports.OmieCliente = async (req, res) => {
           `INSERT INTO integracao_Omie (inJson, inSetor, inData, inCodigo) 
         Values ('${JSON.stringify(
           req.body
-        )}','Cliente', GetDate(),' ${codigo}')`,
+        )}','Cliente', GetDate(),'${codigo}')`,
           {
             type: QueryTypes.INSERT,
           }
