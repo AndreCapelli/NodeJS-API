@@ -1,5 +1,5 @@
-const sequelize = require("sequelize");
-const db = require("../models");
+const db = require("../models/index");
+const sequelize = db.sequelize;
 const { QueryTypes, json, IndexHints } = require("sequelize");
 
 exports.OmiePedido = async (req, res) => {
@@ -9,7 +9,7 @@ exports.OmiePedido = async (req, res) => {
     await sequelize
       .query(
         `INSERT INTO integracao_Omie (inJson, inSetor, inData) 
-        Values ('${req.body}','Pedido', GetDate())`,
+        Values ('${JSON.stringify(req.body)}','Pedido', GetDate())`,
         {
           type: QueryTypes.INSERT,
         }
