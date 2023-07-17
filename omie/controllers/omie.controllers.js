@@ -5,19 +5,24 @@ const { QueryTypes, json, IndexHints } = require("sequelize");
 exports.OmiePedido = async (req, res) => {
   console.log("Pedido: " + req.body);
 
-  await sequelize
-    .query(
-      `INSERT INTO integracao_Omie (inJson, inSetor, inData) 
+  async function insereContato() {
+    await sequelize
+      .query(
+        `INSERT INTO integracao_Omie (inJson, inSetor, inData) 
         Values ('${req.body}','Pedido', GetDate())`,
-      {
-        type: QueryTypes.INSERT,
-      }
-    )
-    .catch((err) => {
-      res.status(500).json({
-        message: err.message + " Omie!",
+        {
+          type: QueryTypes.INSERT,
+        }
+      )
+      .catch((err) => {
+        res.status(500).json({
+          message: err.message + " Omie!",
+        });
       });
-    });
+    return;
+  }
+
+  await insereContato();
 
   res.status(200).send("ok");
 };
