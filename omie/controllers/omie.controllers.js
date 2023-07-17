@@ -1,4 +1,4 @@
 exports.OmiePedido = async (req, res) => {
-  console.log("bateu");
+  console.log(req.body);
   res.status(200).send("JHOM");
 };
