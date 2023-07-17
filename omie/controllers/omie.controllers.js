@@ -47,19 +47,23 @@ exports.OmiePedido = async (req, res) => {
 
 exports.OmieProduto = async (req, res) => {
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
-    await sequelize
-      .query(
-        `DELETE FROM WHERE inSetor = 'Produto' AND inCodigo =
+    async function apagar() {
+      await sequelize
+        .query(
+          `DELETE FROM WHERE inSetor = 'Produto' AND inCodigo =
         '${req.body.event.codigo_produto}'`,
-        {
-          type: QueryTypes.DELETE,
-        }
-      )
-      .catch((err) => {
-        res.status(500).json({
-          message: err.message + " Omie!",
+          {
+            type: QueryTypes.DELETE,
+          }
+        )
+        .catch((err) => {
+          res.status(500).json({
+            message: err.message + " Omie!",
+          });
         });
-      });
+    }
+
+    await apagar;
 
     async function insereContato() {
       await sequelize
