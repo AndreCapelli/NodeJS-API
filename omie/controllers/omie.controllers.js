@@ -70,7 +70,7 @@ exports.OmieProduto = async (req, res) => {
       await sequelize
         .query(
           `INSERT INTO integracao_Omie (inJson, inSetor, inData, inCodigo) 
-        Values ('${JSON.stringify(req.body)}','Produto', GetDate(),' ${
+        Values ('${JSON.stringify(req.body)}','Produto', GetDate(),'${
             req.body.event.codigo_produto
           }')`,
           {
