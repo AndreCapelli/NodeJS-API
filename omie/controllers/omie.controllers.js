@@ -51,8 +51,8 @@ exports.OmieProduto = async (req, res) => {
       console.log("apagando");
       await sequelize
         .query(
-          `DELETE FROM integracao_Omie WHERE inSetor = 'Produto' AND inCodigo =
-        '${req.body.event.codigo_produto}'`,
+          `DELETE FROM integracao_Omie WHERE inSetor = 'Produto' AND Replace(inCodigo,' ','') =
+        '${req.body.event.codigo_produto.replace(/\s/g, "")}'`,
           {
             type: QueryTypes.DELETE,
           }
@@ -70,9 +70,12 @@ exports.OmieProduto = async (req, res) => {
       await sequelize
         .query(
           `INSERT INTO integracao_Omie (inJson, inSetor, inData, inCodigo) 
-        Values ('${JSON.stringify(req.body)}','Produto', GetDate(),'${
-            req.body.event.codigo_produto
-          }')`,
+        Values ('${JSON.stringify(
+          req.body
+        )}','Produto', GetDate(),'${req.body.event.codigo_produto.replace(
+            /\s/g,
+            ""
+          )}')`,
           {
             type: QueryTypes.INSERT,
           }
