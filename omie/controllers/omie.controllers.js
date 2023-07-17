@@ -47,7 +47,7 @@ exports.OmiePedido = async (req, res) => {
 
 exports.OmieProduto = async (req, res) => {
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
-    const codigo = req.body.event.codigo_produto.toString();
+    var codigo = req.body.event.codigo_produto.toString();
 
     codigo = codigo.replace(" ", "");
 
