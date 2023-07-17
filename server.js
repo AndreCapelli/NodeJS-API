@@ -10,10 +10,10 @@ const dbPortal = require("./portal/models");
 
 const fs = require("fs");
 
-// const options = {
-//   key: fs.readFileSync("./ssl/code.key"),
-//   cert: fs.readFileSync("./ssl/code.crt"),
-// };
+const options = {
+  key: fs.readFileSync("./SSL/code.key"),
+  cert: fs.readFileSync("./SSL/code.crt"),
+};
 
 // https.createServer(options, apps).listen(443, () => {
 //   console.log("Servidor HTTPS iniciado na porta 443");
