@@ -3,7 +3,7 @@ const sequelize = db.sequelize;
 const { QueryTypes, json, IndexHints } = require("sequelize");
 
 exports.OmiePedido = async (req, res) => {
-  console.log("Pedido: " + req.body);
+  console.log("Pedido: " + JSON.stringify(req.body));
 
   async function insereContato() {
     await sequelize
