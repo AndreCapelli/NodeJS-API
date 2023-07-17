@@ -36,10 +36,10 @@ exports.OmieProduto = async (req, res) => {
     async function insereContato() {
       await sequelize
         .query(
-          `INSERT INTO integracao_Omie (inJson, inSetor, inData, inDescricaoEtapa, inCodigo) 
+          `INSERT INTO integracao_Omie (inJson, inSetor, inData, inCodigo) 
         Values ('${JSON.stringify(req.body)}','Produto', GetDate(),' ${
-            /*req.body.event.etapa +*/ " - " /*+ req.body.event.etapaDescr*/
-          }',' */${req.body.event.idPedido}/*5050')`,
+            req.body.event.codigo_produto
+          }')`,
           {
             type: QueryTypes.INSERT,
           }
@@ -63,10 +63,10 @@ exports.OmieCliente = async (req, res) => {
     async function insereContato() {
       await sequelize
         .query(
-          `INSERT INTO integracao_Omie (inJson, inSetor, inData, inDescricaoEtapa, inCodigo) 
+          `INSERT INTO integracao_Omie (inJson, inSetor, inData, inCodigo) 
         Values ('${JSON.stringify(req.body)}','Cliente', GetDate(),' ${
-            /*req.body.event.etapa +*/ " - " /*+ req.body.event.etapaDescr*/
-          }',' */${req.body.event.idPedido}/*5050')`,
+            req.body.event.codigo_cliente_omie
+          }')`,
           {
             type: QueryTypes.INSERT,
           }
