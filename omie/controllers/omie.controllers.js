@@ -54,7 +54,7 @@ exports.OmiePedido = async (req, res) => {
 
 exports.OmieProduto = async (req, res) => {
   if (JSON.stringify(req.body) != '{"ping":"omie"}') {
-    var codigo = req.body.event.codigo_produto.toString();
+    var codigo = req.body.event.codigo.toString();
     codigo = codigo.replace(" ", "");
 
     async function apagar() {
