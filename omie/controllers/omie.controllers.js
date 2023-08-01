@@ -22,6 +22,7 @@ exports.OmiePedido = async (req, res) => {
           res.status(500).json({
             message: err.message + " Omie!",
           });
+          return;
         });
     }
 
@@ -42,8 +43,8 @@ exports.OmiePedido = async (req, res) => {
           res.status(500).json({
             message: err.message + " Omie!",
           });
+          return;
         });
-      return;
     }
 
     await insereContato();
@@ -71,6 +72,7 @@ exports.OmieProduto = async (req, res) => {
           res.status(500).json({
             message: err.message + " Omie!",
           });
+          return;
         });
     }
 
@@ -91,6 +93,7 @@ exports.OmieProduto = async (req, res) => {
           res.status(500).json({
             message: err.message + " Omie!",
           });
+          return;
         });
       return;
     }
@@ -121,6 +124,7 @@ exports.OmieCliente = async (req, res) => {
           res.status(500).json({
             message: err.message + " Omie!",
           });
+          return;
         });
     }
 
@@ -141,6 +145,7 @@ exports.OmieCliente = async (req, res) => {
           res.status(500).json({
             message: err.message + " Omie!",
           });
+          return;
         });
       return;
     }
