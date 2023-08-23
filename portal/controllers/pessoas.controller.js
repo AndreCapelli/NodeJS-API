@@ -829,7 +829,7 @@ exports.buscaCombo = async (req, res) => {
 
     // console.log(docsAtualizados.Movimentacoes_ID);
 
-    //var testeJson;
+    //var testeJsoon;
     //jhomaqui
   } // end for
 
