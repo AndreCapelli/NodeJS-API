@@ -1047,9 +1047,11 @@ exports.RealizaAcordo = async (req, res) => {
 
       let Desconto = politicas.PeDescontoMaximoPercent;
 
+      if (Desconto == null) Desconto = 0;
+
       if (Desconto > 0) {
         var ValorDesconto = (ValorAtualizadoTotal * Desconto) / 100;
-      }
+      } else ValorDesconto = 0;
 
       let ValorFinalComDesconto = (
         ValorAtualizadoTotal - ValorDesconto
@@ -1128,6 +1130,10 @@ exports.RealizaAcordo = async (req, res) => {
   console.log("Valor Desconto: " + DescontoReal);
   console.log("Valor final: " + ValorFinal);
 
+  let Desconto = politicas.PeDescontoMaximoPercent;
+
+  if (Desconto == null) Desconto = 0;
+
   var sql = `SET dateformat dmy INSERT INTO MovimentacoesAcordos (MoUsuariosID, MoParcelas, moValorOriginalSemCalc, moValorDesconto,  
     moPorcentagemDesconto,MoValorTotalJuros,MoTotalHonorarios,MoValorTotalMulta,
     MoValorOriginal, MoClientesID, MoInadimplentesID, MoCampanhasID, MoCodigoCampanha,
@@ -1136,11 +1142,11 @@ exports.RealizaAcordo = async (req, res) => {
     MoTotalCorrecao, MoOrigemAcordo) VALUES((SELECT TOP 1 Usuarios_ID FROM USUARIOS Where USNome='CALLTECH'),
     ${politicas.PeQuantidadeMaxParcelas},'${OriginalSemCalc.toFixed(
     2
-  )}','${DescontoReal.toFixed(2)}','${
-    politicas.PeDescontoMaximoPercent
-  }','${TotalJuros.toFixed(2)}','${TotalHonorarios.toFixed(
+  )}','${DescontoReal.toFixed(2)}','${Desconto}','${TotalJuros.toFixed(
     2
-  )}','${TotalMulta.toFixed(2)}','${parseFloat(ValorFinal).toFixed(
+  )}','${TotalHonorarios.toFixed(2)}','${TotalMulta.toFixed(2)}','${parseFloat(
+    ValorFinal
+  ).toFixed(
     2
   )}',${ClienteID},${InadimplenteID},${CampanhaID},'${CampanhaCodigo}','${parseFloat(
     ValorFinal
