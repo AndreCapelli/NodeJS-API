@@ -1395,6 +1395,86 @@ exports.RealizaAcordo = async (req, res) => {
       console.log("Erro: " + err.message);
     });
 
+  //Gera contato ficha
+
+  if (CampanhaCodigo !== "NULL") {
+    var ResumoID;
+    var FoneListID;
+
+    ResumoID = "";
+    FoneListID = "";
+
+    //Pega R.O
+    await sequelize
+      .query(
+        `SELECT ResumoDeOperacoes_ID ID FROM ResumoDeOperacoes WHERE ReNomeInterno = 'QUEBRA ACORDO'`,
+        {
+          type: QueryTypes.SELECT,
+        }
+      )
+      .then((data) => {
+        if (data.length === 0) {
+          //res.status(400).send({ mensagem: "Nenhum registro encontrado" });
+        } else {
+          ResumoID = data[0].ID;
+        }
+      })
+      .catch((err) => {
+        Console.log(
+          err.mensagem + " Erro ao R.O fonelist para gerar Contato ficha "
+        );
+      });
+
+    //Pega FoneList
+    await sequelize
+      .query(
+        `Select FN_FoneList_` +
+          CampanhaCodigo +
+          `_ID ID from Fone_List_` +
+          CampanhaCodigo +
+          ` Where FN_PessoasID =` +
+          InadimplenteID,
+        {
+          type: QueryTypes.SELECT,
+        }
+      )
+      .then((data) => {
+        if (data.length === 0) {
+          //res.status(400).send({ mensagem: "Nenhum registro encontrado" });
+        } else {
+          FoneListID = data[0].ID;
+        }
+      })
+      .catch((err) => {
+        Console.log(
+          err.mensagem + " Erro ao localizar fonelist para gerar Contato ficha "
+        );
+      });
+
+    if (ResumoID !== "" && ResumoID !== "undefined" && FoneListID !== "") {
+      console.log(ResumoID + " " + FoneListID + " Inseriu contato ficha");
+      await sequelize
+        .query(
+          "INSERT INTO ContatosFichas_" +
+            CampanhaCodigo +
+            " (CoFoneListsID, CoDataInicioFicha, CoDataTerminoFicha, " +
+            "CoUsuariosID, CoResumoOperacaoID, CoHistoricoFicha, CoCriterioOrigem)" +
+            " VALUES(" +
+            FoneListID +
+            ", GetDate(), GetDate(),(SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' )," +
+            ResumoID +
+            ", 'Realizou acordo de Nº " +
+            AcordoID +
+            " via Portal de negociação.','API - Portal Neg.')",
+          { type: QueryTypes.INSERT }
+        )
+        .catch((err) => {
+          res.status(400).send({ erro: err.message });
+          return;
+        });
+    }
+  }
+
   res.send("" + AcordoID).status(200);
 };
 
