@@ -1480,7 +1480,8 @@ exports.RealizaAcordo = async (req, res) => {
             CampanhaCodigo +
             " SET FN_UltimoROID=" +
             ResumoID +
-            " , FN_DataUltimoContato = GetDate() Where FN_PessoasID =",
+            " , FN_DataUltimoContato = GetDate() Where FN_PessoasID =" +
+            InadimplenteID,
           { type: QueryTypes.INSERT }
         )
         .catch((err) => {
