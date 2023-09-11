@@ -1407,7 +1407,7 @@ exports.RealizaAcordo = async (req, res) => {
     //Pega R.O
     await sequelize
       .query(
-        `SELECT ResumoDeOperacoes_ID ID FROM ResumoDeOperacoes WHERE ReNomeInterno = 'QUEBRA ACORDO'`,
+        `SELECT ResumoDeOperacoes_ID ID FROM ResumoDeOperacoes WHERE ReNomeInterno = 'ACORDO_PORTAL'`,
         {
           type: QueryTypes.SELECT,
         }
@@ -1453,6 +1453,7 @@ exports.RealizaAcordo = async (req, res) => {
 
     if (ResumoID !== "" && ResumoID !== "undefined" && FoneListID !== "") {
       console.log(ResumoID + " " + FoneListID + " Inseriu contato ficha");
+
       await sequelize
         .query(
           "INSERT INTO ContatosFichas_" +
@@ -1466,6 +1467,20 @@ exports.RealizaAcordo = async (req, res) => {
             ", 'Realizou acordo de Nº " +
             AcordoID +
             " via Portal de negociação.','API - Portal Neg.')",
+          { type: QueryTypes.INSERT }
+        )
+        .catch((err) => {
+          res.status(400).send({ erro: err.message });
+          return;
+        });
+
+      await sequelize
+        .query(
+          "Update Fone_List_" +
+            CampanhaCodigo +
+            " SET FN_UltimoROID=" +
+            ResumoID +
+            " , FN_DataUltimoContato = GetDate() Where FN_PessoasID =",
           { type: QueryTypes.INSERT }
         )
         .catch((err) => {
