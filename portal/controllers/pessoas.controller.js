@@ -577,9 +577,9 @@ exports.buscaCombo = async (req, res) => {
     .query(
       "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
         "Values('" +
-        req.params.Documento +
-        "','BUSCOU COMBOS" +
-        req.params.JPesCNPJ +
+        pessoaDevedor.DevedorDocumento +
+        "','BUSCOU COMBOS " +
+        pessoaCliente.CredorDocumento +
         "', GetDate()," +
         pessoaDevedor.Pessoas_ID +
         ")",
@@ -864,6 +864,24 @@ exports.RealizaAcordo = async (req, res) => {
     return;
   }
 
+  var CPFDevedor;
+
+  // Pega CPF Devedor
+  await sequelize
+    .query(`select dbo.RetornaCPFCNPJ(${InadimplenteID},0) CPF`, {
+      type: QueryTypes.SELECT,
+    })
+    .then((data) => {
+      if (data.length === 0) {
+        res.status(400).send({ mensagem: "Erro ao pegar o CPF do devedor" });
+      } else {
+        CPFDevedor = data[0].CPF;
+      }
+    })
+    .catch((err) => {
+      CPFDevedor = "";
+    });
+
   // Trata usuario cobrador
   await sequelize
     .query(
@@ -919,6 +937,8 @@ exports.RealizaAcordo = async (req, res) => {
           " Algum erro aconteceu na busca das Politicas de cobrança!",
       });
     });
+
+  console.log("esse é meu juros maroto " + politicas.PeJuros);
 
   const docs = await sequelize
     .query(
@@ -1326,6 +1346,7 @@ exports.RealizaAcordo = async (req, res) => {
       });
   }
 
+  //insert politicas
   for (let index = 0; index < docsAtualizados.length; index++) {
     sql =
       "INSERT INTO MovimentacoesPoliticasDeCobranca (MovimentacoesID,MoPoDiaAtraso,MoPoJurosP,MoPoJurosR,MoPoMultaP" +
@@ -1339,15 +1360,15 @@ exports.RealizaAcordo = async (req, res) => {
       "," +
       docsAtualizados[index].DiasAtraso +
       ",'" +
-      politicas.PeJuros +
+      (politicas.PeJuros == null ? 0 : politicas.PeJuros) +
       "','" +
       docsAtualizados[index].JurosReal +
       "','" +
-      politicas.PeMulta +
+      (politicas.PeMulta == null ? 0 : politicas.PeMulta) +
       "','" +
       docsAtualizados[index].MultaReal +
       "','" +
-      politicas.PeHonorario +
+      (politicas.PeHonorario == null ? 0 : politicas.PeHonorario) +
       "','" +
       docsAtualizados[index].HonorarioReal +
       "','" +
@@ -1371,7 +1392,8 @@ exports.RealizaAcordo = async (req, res) => {
       "')";
 
     await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
-      res.status(400).send({ erro: err.message });
+      res.status(400).send({ erro: err.message, query: sql });
+      return;
     });
 
     if (Erro) return;
@@ -1381,7 +1403,7 @@ exports.RealizaAcordo = async (req, res) => {
     .query(
       "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
         "Values('" +
-        req.params.Documento +
+        CPFDevedor +
         "','Realizou Acordo Nº " +
         AcordoID +
         " ClienteID: " +
