@@ -190,6 +190,7 @@ exports.novoContatoSite = async (req, res) => {
       "nome: " +
       nome +
       "\ntelefone: " +
+      ddd +
       telefone +
       "\nemail: " +
       email +
