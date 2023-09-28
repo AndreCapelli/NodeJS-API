@@ -87,6 +87,7 @@ exports.novoContatoSite = async (req, res) => {
   var nome = req.body.nome;
   var email = req.body.email;
   var telefone = req.body.telefone;
+  telefone = telefone.replace(/\s/g, "");
   var assunto = req.body.assunto;
   var mensagem = req.body.mensagem;
 
@@ -141,9 +142,8 @@ exports.novoContatoSite = async (req, res) => {
     );
   }
 
+  var ddd = "";
   if (email !== "" || telefone !== "") {
-    var ddd;
-
     if (telefone.length == 10 || telefone.length == 11) {
       ddd = telefone.substring(0, 2);
       telefone = telefone.substring(2, 20);
