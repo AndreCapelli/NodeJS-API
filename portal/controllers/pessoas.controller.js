@@ -37,7 +37,7 @@ exports.novoProtocolo = async (req, res) => {
   console.log(__dirname);
 
   fs.writeFileSync(
-    "NovoProtocolo"  + Math.floor(Math.random() * 1000000) + ".txt",
+    "NovoProtocolo" + Math.floor(Math.random() * 1000000) + ".txt",
     JSON.stringify(req.body),
     (err) => {
       if (err) throw err;
@@ -131,34 +131,30 @@ exports.buscaDevedor = async (req, res) => {
       console.log("Erro: " + err.message);
     });
 
-  const docs = await Movimentacoes.findAll({
-    where: {
-      MoInadimplentesID: pessoaDevedor.Pessoas_ID,
-      MoStatusMovimentacao: 0,
-      MoOrigemMovimentacao: {
-        [Op.in]: ["I", "C"],
-      },
-    },
-    order: [
-      ["MoInadimplentesID", "ASC"],
-      ["MoClientesID", "ASC"],
-      ["MoDataVencimento", "ASC"],
-    ],
-  })
-    .then((data) => {
-      return data;
-    })
-    .catch((err) => {
-      res.status(500).json({
-        message: err.message + " Algum erro aconteceu na busca dos Documentos!",
-      });
-      return;
+  var docs;
+  try {
+    docs = await sequelize.query(
+      `SELECT Movimentacoes_ID, MoInadimplentesID, MoClientesID, MoValorDocumento,
+      MoDataVencimento, CaOperadorProprietarioID CobradorID
+       FROM Movimentacoes With(NOLOCK) 
+       Left Join CampanhasPessoas with(NOLOCK) On MoInadimplentesID = CaPessoasID AND MoCampanhasID = CaCampanhasID
+       WHERE MoInadimplentesID = :pessoaDevedorID AND MoStatusMovimentacao = 0 
+      AND MoOrigemMovimentacao IN ('I', 'C') ORDER BY MoInadimplentesID ASC, MoClientesID ASC, MoDataVencimento ASC`,
+      {
+        type: QueryTypes.SELECT,
+        replacements: { pessoaDevedorID: pessoaDevedor.Pessoas_ID },
+      }
+    );
+  } catch (err) {
+    res.status(500).json({
+      message: err.message + ' Algum erro aconteceu na busca dos Documentos!',
     });
+  }
 
   let jsonDevedor = JSON.parse(JSON.stringify(pessoaDevedor));
   let jsonDocs = JSON.parse(JSON.stringify(docs));
 
-  const hoje = new Date(); 
+  const hoje = new Date();
   jsonDocs.forEach((doc) => {
     const dataVencimento = new Date(doc.MoDataVencimento);
     const diferencaEmMilissegundos = dataVencimento - hoje;

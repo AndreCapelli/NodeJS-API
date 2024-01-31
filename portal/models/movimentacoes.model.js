@@ -59,6 +59,11 @@ module.exports = (sequelize, Sequelize) => {
     }
   );
 
+
+
   Movimentacoes.removeAttribute("id");
   return Movimentacoes;
 };
+
+
+
