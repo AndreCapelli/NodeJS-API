@@ -1,6 +1,6 @@
 const db = require("../models/index");
 const sequelize = db.sequelize;
-const { QueryTypes, json, IndexHints } = require("sequelize");
+const { QueryTypes, json, IndexHints, where } = require("sequelize");
 const Pessoas = db.pessoas;
 const Movimentacoes = db.movimentacoes;
 const Politicas = db.politicas;
@@ -8,6 +8,7 @@ const Op = db.Sequelize.Op;
 
 const https = require("https");
 const fs = require("fs");
+const path = require("path");
 
 // const options = {
 //   key: fs.readFileSync("path/to/private.key"),
@@ -26,6 +27,150 @@ const { Sequelize } = require("../models/index");
  * Os métodos chamados após a const Pessoa são nativos do Sequelize, na documentação terá a explicação de todos
  * o resto é apenas JS
  */
+
+exports.novoProtocolo = async (req, res) => {
+  //console.log(req.body);
+
+  const lead = JSON.parse(JSON.stringify(req.body));
+  const diretorio = path.basename(__dirname);
+
+  console.log(__dirname);
+
+  fs.writeFileSync(
+    "NovoProtocolo"  + Math.floor(Math.random() * 1000000) + ".txt",
+    JSON.stringify(req.body),
+    (err) => {
+      if (err) throw err;
+      console.log("Protocolo recebido!");
+    }
+  );
+
+  res.send("protocolo recebido!").status(200);
+};
+
+exports.buscaDevedor = async (req, res) => {
+
+
+  var tipo = req.params.Type;
+  var Documento = req.params.Document
+
+  var pessoaDevedor;
+  var whereCondicao;
+
+  if (tipo == "cpf") {
+    whereCondicao = {
+      [Op.or]: [
+        { JPesCNPJ: Documento },
+        { FPesCPF: Documento },
+      ],
+    };
+  }
+  else {
+    whereCondicao = sequelize.literal(`
+        Pessoas_ID = (
+            SELECT TOP 1 PesPessoasID 
+            FROM PessoasContatos With(NOLOCK) 
+            Where ISNULL(PesTelefone,'') = '${Documento}'
+        )
+    `);
+  }
+
+
+  pessoaDevedor = await Pessoas.findAll({
+    where: whereCondicao,
+  })
+    .then((data) => {
+      if (data.length == 0) {
+        return { Vazio: "" };
+      } else {
+        return {
+          Pessoas_ID: data[0].Pessoas_ID,
+          DevedorNome:
+            data[0].PesTipoPessoa == "F"
+              ? data[0].FPesNome
+              : data[0].JPesRazaoSocial,
+          DevedorDocumento:
+            data[0].PesTipoPessoa == "F" ? data[0].FPesCPF : data[0].JPesCNPJ,
+          DevedorApelido:
+            data[0].PesTipoPessoa == "F"
+              ? data[0].FPesApelido
+              : data[0].JPesNomeFantasia,
+        };
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({
+        message: err.message + " Algum erro aconteceu na busca do Devedor!",
+      });
+      return;
+    });
+
+
+
+
+  if (pessoaDevedor.Vazio !== undefined) {
+    res.status(200).json({
+      message: "Operação bem sucedida mas nenhum devedor encontrado!",
+    });
+    return;
+  }
+
+  await sequelize
+    .query(
+      "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
+      "Values('" +
+      pessoaDevedor.DevedorDocumento +
+      "','BUSCOU DEVEDOR - WHATSAPP " +
+      pessoaDevedor.DevedorNome +
+      "', GetDate()," +
+      pessoaDevedor.Pessoas_ID +
+      ")",
+      { type: QueryTypes.INSERT }
+    )
+    .catch((err) => {
+      console.log("Erro: " + err.message);
+    });
+
+  const docs = await Movimentacoes.findAll({
+    where: {
+      MoInadimplentesID: pessoaDevedor.Pessoas_ID,
+      MoStatusMovimentacao: 0,
+      MoOrigemMovimentacao: {
+        [Op.in]: ["I", "C"],
+      },
+    },
+    order: [
+      ["MoInadimplentesID", "ASC"],
+      ["MoClientesID", "ASC"],
+      ["MoDataVencimento", "ASC"],
+    ],
+  })
+    .then((data) => {
+      return data;
+    })
+    .catch((err) => {
+      res.status(500).json({
+        message: err.message + " Algum erro aconteceu na busca dos Documentos!",
+      });
+      return;
+    });
+
+  let jsonDevedor = JSON.parse(JSON.stringify(pessoaDevedor));
+  let jsonDocs = JSON.parse(JSON.stringify(docs));
+
+  const hoje = new Date(); 
+  jsonDocs.forEach((doc) => {
+    const dataVencimento = new Date(doc.MoDataVencimento);
+    const diferencaEmMilissegundos = dataVencimento - hoje;
+    const diferencaEmDias = Math.ceil(diferencaEmMilissegundos / (1000 * 60 * 60 * 24));
+    doc.DiasEmAtraso = diferencaEmDias * -1;
+  });
+
+  jsonDevedor.Documentos = jsonDocs;
+
+
+  res.send(jsonDevedor).status(200);
+}
 
 exports.atualizaEmail = async (req, res) => {
   var cpf = req.body.cpf;
@@ -104,17 +249,17 @@ exports.atualizaEmail = async (req, res) => {
   await sequelize
     .query(
       "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
-        "Values('" +
-        req.params.Documento +
-        "','ATUALIZOU TELEFONE/ EMAIL" +
-        DDD +
-        " " +
-        telefone +
-        " " +
-        email +
-        "', GetDate()," +
-        pessoa.Pessoas_ID +
-        ")",
+      "Values('" +
+      req.params.Documento +
+      "','ATUALIZOU TELEFONE/ EMAIL" +
+      DDD +
+      " " +
+      telefone +
+      " " +
+      email +
+      "', GetDate()," +
+      pessoa.Pessoas_ID +
+      ")",
       { type: QueryTypes.INSERT }
     )
     .catch((err) => {
@@ -126,6 +271,7 @@ exports.atualizaEmail = async (req, res) => {
 };
 
 exports.findOne = async (req, res) => {
+
   if (!req.params.Documento) {
     res
       .status(406)
@@ -133,13 +279,13 @@ exports.findOne = async (req, res) => {
     return;
   }
 
-  //registra logo
+  //registra log
   await sequelize
     .query(
       "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData) " +
-        "Values('" +
-        req.params.Documento +
-        "','SOLICITOU BUSCA DE DIVIDAS', GetDate()) ",
+      "Values('" +
+      req.params.Documento +
+      "','SOLICITOU BUSCA DE DIVIDAS', GetDate()) ",
       { type: QueryTypes.INSERT }
     )
     .catch((err) => {
@@ -177,6 +323,7 @@ exports.findOne = async (req, res) => {
       res.status(500).json({
         message: err.message + " Algum erro aconteceu na busca do Devedor!",
       });
+      return;
     });
 
   if (pessoaDevedor.Vazio == "") {
@@ -185,9 +332,9 @@ exports.findOne = async (req, res) => {
     await sequelize
       .query(
         "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData) " +
-          "Values('" +
-          req.params.Documento +
-          "','PESSOA NÃO ENCONTRADA', GetDate()) ",
+        "Values('" +
+        req.params.Documento +
+        "','PESSOA NÃO ENCONTRADA', GetDate()) ",
         { type: QueryTypes.INSERT }
       )
       .catch((err) => {
@@ -200,11 +347,11 @@ exports.findOne = async (req, res) => {
   await sequelize
     .query(
       "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
-        "Values('" +
-        req.params.Documento +
-        "','PESSOA LOCALIZADA', GetDate()," +
-        pessoaDevedor.Pessoas_ID +
-        ")",
+      "Values('" +
+      req.params.Documento +
+      "','PESSOA LOCALIZADA', GetDate()," +
+      pessoaDevedor.Pessoas_ID +
+      ")",
       { type: QueryTypes.INSERT }
     )
     .catch((err) => {
@@ -339,9 +486,9 @@ exports.findOne = async (req, res) => {
         let ValorJurosReal = parseFloat(
           calculos.CalculaJuros(
             ValorDocumento +
-              parseFloat(
-                politicas.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0
-              ),
+            parseFloat(
+              politicas.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0
+            ),
             politicas.PeJuros,
             funcoes.CalculaDias(
               funcoes.ArrumaData(docs.MoDataVencimento),
@@ -384,31 +531,31 @@ exports.findOne = async (req, res) => {
         let ValorHonorariosSobJuros =
           politicas.PeAplicaHonorario_Juros == true
             ? parseFloat(
-                calculos.CalculaHonorarios(
-                  ValorJurosReal,
-                  politicas.PeHonorario
-                )
+              calculos.CalculaHonorarios(
+                ValorJurosReal,
+                politicas.PeHonorario
               )
+            )
             : 0;
 
         let ValorHonorarioSobMulta =
           politicas.PeAplicaHonorario_Multa == true
             ? parseFloat(
-                calculos.CalculaHonorarios(
-                  ValorMultaReal,
-                  politicas.PeHonorario
-                )
+              calculos.CalculaHonorarios(
+                ValorMultaReal,
+                politicas.PeHonorario
               )
+            )
             : 0;
 
         let ValorHonorarioSobCorrecao =
           politicas.PeAplicaHonorario_Correcao == true
             ? parseFloat(
-                calculos.CalculaHonorarios(
-                  ValorCorrecaoReal,
-                  politicas.PeHonorario
-                )
+              calculos.CalculaHonorarios(
+                ValorCorrecaoReal,
+                politicas.PeHonorario
               )
+            )
             : 0;
 
         let ValorHonorarioRealTotal =
@@ -576,13 +723,13 @@ exports.buscaCombo = async (req, res) => {
   await sequelize
     .query(
       "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
-        "Values('" +
-        pessoaDevedor.DevedorDocumento +
-        "','BUSCOU COMBOS " +
-        pessoaCliente.CredorDocumento +
-        "', GetDate()," +
-        pessoaDevedor.Pessoas_ID +
-        ")",
+      "Values('" +
+      pessoaDevedor.DevedorDocumento +
+      "','BUSCOU COMBOS " +
+      pessoaCliente.CredorDocumento +
+      "', GetDate()," +
+      pessoaDevedor.Pessoas_ID +
+      ")",
       { type: QueryTypes.INSERT }
     )
     .catch((err) => {
@@ -662,7 +809,7 @@ exports.buscaCombo = async (req, res) => {
         let ValorJurosReal = parseFloat(
           calculos.CalculaJuros(
             docs.MoValorDocumento +
-              (element.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0),
+            (element.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0),
             element.PeJuros,
             funcoes.CalculaDias(
               funcoes.ArrumaData(docs.MoDataVencimento),
@@ -704,25 +851,25 @@ exports.buscaCombo = async (req, res) => {
         let ValorHonorariosSobJuros =
           element.PeAplicaHonorario_Juros == true
             ? parseFloat(
-                calculos.CalculaHonorarios(ValorJurosReal, element.PeHonorario)
-              )
+              calculos.CalculaHonorarios(ValorJurosReal, element.PeHonorario)
+            )
             : 0;
 
         let ValorHonorarioSobMulta =
           element.PeAplicaHonorario_Multa == true
             ? parseFloat(
-                calculos.CalculaHonorarios(ValorMultaReal, element.PeHonorario)
-              )
+              calculos.CalculaHonorarios(ValorMultaReal, element.PeHonorario)
+            )
             : 0;
 
         let ValorHonorarioSobCorrecao =
           element.PeAplicaHonorario_Correcao == true
             ? parseFloat(
-                calculos.CalculaHonorarios(
-                  ValorCorrecaoReal,
-                  element.PeHonorario
-                )
+              calculos.CalculaHonorarios(
+                ValorCorrecaoReal,
+                element.PeHonorario
               )
+            )
             : 0;
 
         let ValorHonorarioRealTotal =
@@ -986,7 +1133,7 @@ exports.RealizaAcordo = async (req, res) => {
       let ValorJurosReal = parseFloat(
         calculos.CalculaJuros(
           docs.MoValorDocumento +
-            (politicas.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0),
+          (politicas.PeBaseCalculoJuros == 1 ? ValorCorrecaoReal : 0),
           politicas.PeJuros,
           funcoes.CalculaDias(
             funcoes.ArrumaData(docs.MoDataVencimento),
@@ -1028,25 +1175,25 @@ exports.RealizaAcordo = async (req, res) => {
       let ValorHonorariosSobJuros =
         politicas.PeAplicaHonorario_Juros == true
           ? parseFloat(
-              calculos.CalculaHonorarios(ValorJurosReal, politicas.PeHonorario)
-            )
+            calculos.CalculaHonorarios(ValorJurosReal, politicas.PeHonorario)
+          )
           : 0;
 
       let ValorHonorarioSobMulta =
         politicas.PeAplicaHonorario_Multa == true
           ? parseFloat(
-              calculos.CalculaHonorarios(ValorMultaReal, politicas.PeHonorario)
-            )
+            calculos.CalculaHonorarios(ValorMultaReal, politicas.PeHonorario)
+          )
           : 0;
 
       let ValorHonorarioSobCorrecao =
         politicas.PeAplicaHonorario_Correcao == true
           ? parseFloat(
-              calculos.CalculaHonorarios(
-                ValorCorrecaoReal,
-                politicas.PeHonorario
-              )
+            calculos.CalculaHonorarios(
+              ValorCorrecaoReal,
+              politicas.PeHonorario
             )
+          )
           : 0;
 
       let ValorHonorarioRealTotal =
@@ -1170,13 +1317,12 @@ exports.RealizaAcordo = async (req, res) => {
     2
   )}',${ClienteID},${InadimplenteID},${CampanhaID},'${CampanhaCodigo}','${parseFloat(
     ValorFinal
-  ).toFixed(2)}','${req.body.primeiro_venc}','${req.body.ultimo_venc}',${
-    politicas.PeTabelaIndicesEconomicosID == 0
-      ? "NULL"
-      : politicas.PeTabelaIndicesEconomicosID
-  },${politicas.PessoasPoliticaCobrancas_ID}, '${parseFloat(ValorFinal).toFixed(
-    2
-  )}','${TotalCorrecao.toFixed(2)}','PORTAL')`;
+  ).toFixed(2)}','${req.body.primeiro_venc}','${req.body.ultimo_venc}',${politicas.PeTabelaIndicesEconomicosID == 0
+    ? "NULL"
+    : politicas.PeTabelaIndicesEconomicosID
+    },${politicas.PessoasPoliticaCobrancas_ID}, '${parseFloat(ValorFinal).toFixed(
+      2
+    )}','${TotalCorrecao.toFixed(2)}','PORTAL')`;
 
   await sequelize.query(sql, { type: QueryTypes.INSERT }).catch((err) => {
     res.send({ erro: err.message }).status(400);
@@ -1208,11 +1354,11 @@ exports.RealizaAcordo = async (req, res) => {
   await sequelize
     .query(
       "set dateformat dmy  INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, " +
-        "MoForm, MoRotina, MoTabela, MoMovimentacoesAcordosID)" +
-        "VALUES((SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' )," +
-        "'Criou acordo via portal', 'API - MaxSmart', 'Post - RealizaAcordos', 'MovimentacoesAcordos', " +
-        AcordoID +
-        ")",
+      "MoForm, MoRotina, MoTabela, MoMovimentacoesAcordosID)" +
+      "VALUES((SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' )," +
+      "'Criou acordo via portal', 'API - MaxSmart', 'Post - RealizaAcordos', 'MovimentacoesAcordos', " +
+      AcordoID +
+      ")",
       { type: QueryTypes.INSERT }
     )
     .catch((err) => {
@@ -1227,11 +1373,11 @@ exports.RealizaAcordo = async (req, res) => {
     await sequelize
       .query(
         "set dateformat dmy  INSERT INTO MovimentacoesAcordosDocumentos (MoMovimentacoesAcordosID, MoMovimentacoesID, MoTipoDocumento) " +
-          "values(" +
-          AcordoID +
-          "," +
-          element.Movimentacoes_ID +
-          ",'O')",
+        "values(" +
+        AcordoID +
+        "," +
+        element.Movimentacoes_ID +
+        ",'O')",
         { type: QueryTypes.INSERT }
       )
       .catch((err) => {
@@ -1241,9 +1387,9 @@ exports.RealizaAcordo = async (req, res) => {
     await sequelize
       .query(
         "UPDATE Movimentacoes SET MoDestinoAcordoID=" +
-          AcordoID +
-          ", MoStatusMovimentacao = 1 Where Movimentacoes_ID=" +
-          element.Movimentacoes_ID,
+        AcordoID +
+        ", MoStatusMovimentacao = 1 Where Movimentacoes_ID=" +
+        element.Movimentacoes_ID,
         { type: QueryTypes.UPDATE }
       )
       .catch((err) => {
@@ -1333,12 +1479,12 @@ exports.RealizaAcordo = async (req, res) => {
     await sequelize
       .query(
         "INSERT INTO MovimentacoesAcordosLogs (MoUsuariosID, MoAcao, MoForm, MoRotina, " +
-          "MoTabela, MoMovimentacoesAcordosID, MoMovimentacoesID)" +
-          " VALUES((SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' ),'Criou movimentacao via portal','API','Post - RealizaAcordo', 'Movimentacoes'," +
-          AcordoID +
-          "," +
-          MovimentacaoID +
-          ")",
+        "MoTabela, MoMovimentacoesAcordosID, MoMovimentacoesID)" +
+        " VALUES((SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' ),'Criou movimentacao via portal','API','Post - RealizaAcordo', 'Movimentacoes'," +
+        AcordoID +
+        "," +
+        MovimentacaoID +
+        ")",
         { type: QueryTypes.INSERT }
       )
       .catch((err) => {
@@ -1402,15 +1548,15 @@ exports.RealizaAcordo = async (req, res) => {
   await sequelize
     .query(
       "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
-        "Values('" +
-        CPFDevedor +
-        "','Realizou Acordo Nº " +
-        AcordoID +
-        " ClienteID: " +
-        ClienteID +
-        "', GetDate()," +
-        InadimplenteID +
-        ")",
+      "Values('" +
+      CPFDevedor +
+      "','Realizou Acordo Nº " +
+      AcordoID +
+      " ClienteID: " +
+      ClienteID +
+      "', GetDate()," +
+      InadimplenteID +
+      ")",
       { type: QueryTypes.INSERT }
     )
     .catch((err) => {
@@ -1451,11 +1597,11 @@ exports.RealizaAcordo = async (req, res) => {
     await sequelize
       .query(
         `Select FN_FoneList_` +
-          CampanhaCodigo +
-          `_ID ID from Fone_List_` +
-          CampanhaCodigo +
-          ` Where FN_PessoasID =` +
-          InadimplenteID,
+        CampanhaCodigo +
+        `_ID ID from Fone_List_` +
+        CampanhaCodigo +
+        ` Where FN_PessoasID =` +
+        InadimplenteID,
         {
           type: QueryTypes.SELECT,
         }
@@ -1479,16 +1625,16 @@ exports.RealizaAcordo = async (req, res) => {
       await sequelize
         .query(
           "INSERT INTO ContatosFichas_" +
-            CampanhaCodigo +
-            " (CoFoneListsID, CoDataInicioFicha, CoDataTerminoFicha, " +
-            "CoUsuariosID, CoResumoOperacaoID, CoHistoricoFicha, CoCriterioOrigem)" +
-            " VALUES(" +
-            FoneListID +
-            ", GetDate(), GetDate(),(SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' )," +
-            ResumoID +
-            ", 'Realizou acordo de Nº " +
-            AcordoID +
-            " via Portal de negociação.','API - Portal Neg.')",
+          CampanhaCodigo +
+          " (CoFoneListsID, CoDataInicioFicha, CoDataTerminoFicha, " +
+          "CoUsuariosID, CoResumoOperacaoID, CoHistoricoFicha, CoCriterioOrigem)" +
+          " VALUES(" +
+          FoneListID +
+          ", GetDate(), GetDate(),(SELECT Usuarios_ID From Usuarios With(NOLOCK) Where UsNome = 'CALLTECH' )," +
+          ResumoID +
+          ", 'Realizou acordo de Nº " +
+          AcordoID +
+          " via Portal de negociação.','API - Portal Neg.')",
           { type: QueryTypes.INSERT }
         )
         .catch((err) => {
@@ -1499,11 +1645,11 @@ exports.RealizaAcordo = async (req, res) => {
       await sequelize
         .query(
           "Update Fone_List_" +
-            CampanhaCodigo +
-            " SET FN_UltimoROID=" +
-            ResumoID +
-            " , FN_DataUltimoContato = GetDate() Where FN_PessoasID =" +
-            InadimplenteID,
+          CampanhaCodigo +
+          " SET FN_UltimoROID=" +
+          ResumoID +
+          " , FN_DataUltimoContato = GetDate() Where FN_PessoasID =" +
+          InadimplenteID,
           { type: QueryTypes.INSERT }
         )
         .catch((err) => {
