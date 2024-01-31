@@ -135,7 +135,7 @@ exports.buscaDevedor = async (req, res) => {
   try {
     docs = await sequelize.query(
       `SELECT Movimentacoes_ID, MoInadimplentesID, MoClientesID, MoValorDocumento,
-      MoDataVencimento, CaOperadorProprietarioID CobradorID
+      MoDataVencimento, CaOperadorProprietarioID CobradorID, dbo.RetornaNomeUsuario(CaOperadorProprietarioID) Cobrador
        FROM Movimentacoes With(NOLOCK) 
        Left Join CampanhasPessoas with(NOLOCK) On MoInadimplentesID = CaPessoasID AND MoCampanhasID = CaCampanhasID
        WHERE MoInadimplentesID = :pessoaDevedorID AND MoStatusMovimentacao = 0 
