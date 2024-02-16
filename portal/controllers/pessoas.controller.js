@@ -70,7 +70,7 @@ exports.buscaDevedor = async (req, res) => {
         Pessoas_ID = (
             SELECT TOP 1 PesPessoasID 
             FROM PessoasContatos With(NOLOCK) 
-            Where ISNULL(PesTelefone,'') = '${Documento}'
+            Where ISNULL(PesDDD) + ISNULL(PesTelefone,'') = '${Documento}'
         )
     `);
   }
