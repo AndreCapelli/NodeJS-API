@@ -48,6 +48,51 @@ exports.novoProtocolo = async (req, res) => {
   res.send("protocolo recebido!").status(200);
 };
 
+exports.buscaDevedorTelefone = async (req, res) => {
+
+  var Documento = req.params.Document
+  var whereCondicao;
+
+  whereCondicao = sequelize.literal(`
+  Pessoas_ID IN (
+      SELECT PesPessoasID 
+      FROM PessoasContatos With(NOLOCK) 
+      Where ISNULL(PesDDD,'') + ISNULL(PesTelefone,'') = '${Documento}'
+  )
+`);
+
+  pessoaDevedor = await Pessoas.findAll({
+    where: whereCondicao,
+  })
+    .then((data) => {
+      if (data.length == 0) {
+        return { Vazio: "" };
+      } else {
+        return data
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({
+        message: err.message + " Algum erro aconteceu na busca do Devedor!",
+      });
+      return;
+    });
+
+
+
+
+  if (pessoaDevedor.Vazio !== undefined) {
+    res.status(200).json({
+      message: "Operação bem sucedida mas nenhum devedor encontrado!",
+    });
+    return;
+  }
+  else {
+    res.status(200).json(pessoaDevedor);
+  }
+
+};
+
 exports.buscaDevedor = async (req, res) => {
 
 
@@ -67,8 +112,8 @@ exports.buscaDevedor = async (req, res) => {
   }
   else {
     whereCondicao = sequelize.literal(`
-        Pessoas_ID = (
-            SELECT TOP 1 PesPessoasID 
+        Pessoas_ID IN (
+            SELECT PesPessoasID 
             FROM PessoasContatos With(NOLOCK) 
             Where ISNULL(PesDDD,'') + ISNULL(PesTelefone,'') = '${Documento}'
         )

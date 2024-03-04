@@ -8,6 +8,7 @@ module.exports = (app) => {
   router.get("/combo/:DocInad&:DocCli", pessoa.buscaCombo);
   router.post("/RealizaAcordo/", pessoa.RealizaAcordo);
   router.get("/buscaDevedor/:Type&:Document", pessoa.buscaDevedor);
+  router.get("/buscaDevedorTelefone/:Document", pessoa.buscaDevedorTelefone);
   router.post("/novoProtocolo/", pessoa.novoProtocolo);
 
   app.use("/portal", router);
