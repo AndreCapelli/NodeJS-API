@@ -41,7 +41,7 @@ exports.novoProtocolo = async (req, res) => {
     JSON.stringify(req.body),
     (err) => {
       if (err) throw err;
-      console.log("Protocolo recebido!");
+      console.log("Falha ao gerar protocolo!");
     }
   );
 
