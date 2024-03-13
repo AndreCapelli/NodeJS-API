@@ -29,23 +29,28 @@ const { Sequelize } = require("../models/index");
  */
 
 exports.novoProtocolo = async (req, res) => {
-  //console.log(req.body);
-
   const lead = JSON.parse(JSON.stringify(req.body));
   const diretorio = path.basename(__dirname);
 
-  console.log(__dirname);
+  console.log('pasta: ' + __dirname);
 
-  fs.writeFileSync(
-    "NovoProtocolo" + Math.floor(Math.random() * 1000000) + ".txt",
+  const fileName = "NovoProtocolo" + Math.floor(Math.random() * 1000000) + ".txt";
+  const filePath = path.join(__dirname, fileName);
+
+  fs.writeFile(
+    filePath,
     JSON.stringify(req.body),
     (err) => {
-      if (err) throw err;
-      console.log("Falha ao gerar protocolo!");
+      if (err) {
+        console.error("Falha ao gerar protocolo:", err);
+        res.status(500).send("Erro ao gerar protocolo!");
+        return;
+      }
+
+      console.log("Protocolo gerado com sucesso em:", filePath);
+      res.status(200).send("Protocolo recebido e salvo!");
     }
   );
-
-  res.send("protocolo recebido!").status(200);
 };
 
 exports.buscaDevedorTelefone = async (req, res) => {
