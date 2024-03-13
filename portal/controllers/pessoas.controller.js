@@ -2,6 +2,7 @@ const db = require("../models/index");
 const sequelize = db.sequelize;
 const { QueryTypes, json, IndexHints, where } = require("sequelize");
 const Pessoas = db.pessoas;
+const PessoasContatos = db.pessoasContatos;
 const Movimentacoes = db.movimentacoes;
 const Politicas = db.politicas;
 const Op = db.Sequelize.Op;
@@ -29,28 +30,73 @@ const { Sequelize } = require("../models/index");
  */
 
 exports.novoProtocolo = async (req, res) => {
-  const lead = JSON.parse(JSON.stringify(req.body));
-  const diretorio = path.basename(__dirname);
 
-  console.log('pasta: ' + __dirname);
+  const pessoaID = req.body.idCliente;
+  const telefone = req.body.telefone;
+  const protocolo = req.body.protocolo;
+  const link = req.body.linkAcesso;
 
-  const fileName = "NovoProtocolo" + Math.floor(Math.random() * 1000000) + ".txt";
-  const filePath = path.join(__dirname, fileName);
 
-  fs.writeFile(
-    filePath,
-    JSON.stringify(req.body),
-    (err) => {
-      if (err) {
-        console.error("Falha ao gerar protocolo:", err);
-        res.status(500).send("Erro ao gerar protocolo!");
-        return;
-      }
+  // Verifica se o registro já existe
+  const existentRecord = await PessoasContatos.findOne({
+    where: {
+      PesPessoasID: pessoaID,
+      PesTelefone: telefone.substring(2, 50),
+    },
+  });
 
-      console.log("Protocolo gerado com sucesso em:", filePath);
-      res.status(200).send("Protocolo recebido e salvo!");
-    }
-  );
+  if (!existentRecord) {
+    // Se não existir, insere um novo registro
+    await PessoasContatos.create({
+      PesPessoasID: pessoaID,
+      PesDDD: telefone.substring(0, 2),
+      PesTelefone: telefone.substring(2, 50),
+      PesOrigemContato: 'HyperWhats',
+      PesHyperProtocolo: protocolo,
+      PesHyperLinkConversa: link,
+    });
+  } else {
+    // Se existir, atualiza o registro existente
+    await PessoasContatos.update({
+      PesHyperProtocolo: protocolo,
+      PesHyperLinkConversa: link,
+      PesDDD: telefone.substring(0, 2),
+      PesTelefone: telefone.substring(2, 50),
+    }, {
+      where: {
+        PesPessoasID: pessoaID,
+        PesTelefone: telefone.substring(2, 50),
+      },
+    });
+  }
+
+  res.status(200).send("Protocolo recebido e salvo!");
+
+
+
+
+  // const lead = JSON.parse(JSON.stringify(req.body));
+  // const diretorio = path.basename(__dirname);
+
+  // console.log('pasta: ' + __dirname);
+
+  // const fileName = "NovoProtocolo" + Math.floor(Math.random() * 1000000) + ".txt";
+  // const filePath = path.join(__dirname, fileName);
+
+  // fs.writeFile(
+  //   filePath,
+  //   JSON.stringify(req.body),
+  //   (err) => {
+  //     if (err) {
+  //       console.error("Falha ao gerar protocolo:", err);
+  //       res.status(500).send("Erro ao gerar protocolo!");
+  //       return;
+  //     }
+
+  //     console.log("Protocolo gerado com sucesso em:", filePath);
+  //     res.status(200).send("Protocolo recebido e salvo!");
+  //   }
+  // );
 };
 
 exports.buscaDevedorTelefone = async (req, res) => {

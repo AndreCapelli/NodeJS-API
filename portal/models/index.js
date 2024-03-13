@@ -36,6 +36,7 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.pessoas = require("./pessoas.model.js")(sequelize, Sequelize);
+db.pessoasContatos = require("./pessoasContatos.model.js")(sequelize, Sequelize);
 db.movimentacoes = require("./movimentacoes.model.js")(sequelize, Sequelize);
 db.campanhasPessoas = require("./campanhaspessoas.model.js")(sequelize, Sequelize);
 db.politicas = require("./politicas.model.js")(sequelize, Sequelize);
