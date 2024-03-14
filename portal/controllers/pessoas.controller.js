@@ -291,9 +291,10 @@ exports.buscaDevedor = async (req, res) => {
   try {
     docs = await sequelize.query(
       `SELECT Movimentacoes_ID, MoInadimplentesID, MoClientesID, MoValorDocumento,
-      MoDataVencimento, CaOperadorProprietarioID CobradorID, dbo.RetornaNomeUsuario(CaOperadorProprietarioID) Cobrador
+      MoDataVencimento, CaOperadorProprietarioID CobradorID, dbo.RetornaNomeUsuario(CaOperadorProprietarioID) Cobrador, UsEmail EmailCobrador
        FROM Movimentacoes With(NOLOCK) 
        Left Join CampanhasPessoas with(NOLOCK) On MoInadimplentesID = CaPessoasID AND MoCampanhasID = CaCampanhasID
+       Left Join Usuarios with(NOLOCK) On CaOperadorProprietarioID = Usuarios_ID
        WHERE MoInadimplentesID = :pessoaDevedorID AND MoStatusMovimentacao = 0 
       AND MoOrigemMovimentacao IN ('I', 'C') ORDER BY MoInadimplentesID ASC, MoClientesID ASC, MoDataVencimento ASC`,
       {
