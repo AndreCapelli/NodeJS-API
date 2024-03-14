@@ -36,6 +36,8 @@ exports.novoProtocolo = async (req, res) => {
   const protocolo = req.body.protocolo;
   const link = req.body.linkAcesso;
 
+  var contatoID;
+
 
   // Verifica se o registro já existe
   const existentRecord = await PessoasContatos.findOne({
@@ -45,6 +47,7 @@ exports.novoProtocolo = async (req, res) => {
     },
   });
 
+
   if (!existentRecord) {
     // Se não existir, insere um novo registro
     await PessoasContatos.create({
@@ -52,14 +55,31 @@ exports.novoProtocolo = async (req, res) => {
       PesDDD: telefone.substring(0, 2),
       PesTelefone: telefone.substring(2, 50),
       PesOrigemContato: 'HyperWhats',
-      PesHyperProtocolo: protocolo,
-      PesHyperLinkConversa: link,
     });
+
+    //pega o id
+    PessoasContatos.findOne({
+      where: {
+        PesPessoasID: pessoaID,
+        PesTelefone: telefone.substring(2, 50),
+      },
+    }).then((pessoaContato) => {
+      if (pessoaContato) {
+        contatoID = pessoaContato.PessoasContatos_ID;
+        // Faça o que precisa com o campo retornado
+      } else {
+        console.log('Nenhum resultado encontrado');
+      }
+    }).catch((err) => {
+      console.error('Erro ao executar a consulta:', err);
+    });
+
+    console.log('Contato inserido')
+
   } else {
+    contatoID = existentRecord.PessoasContatos_ID;
     // Se existir, atualiza o registro existente
     await PessoasContatos.update({
-      PesHyperProtocolo: protocolo,
-      PesHyperLinkConversa: link,
       PesDDD: telefone.substring(0, 2),
       PesTelefone: telefone.substring(2, 50),
     }, {
@@ -68,7 +88,47 @@ exports.novoProtocolo = async (req, res) => {
         PesTelefone: telefone.substring(2, 50),
       },
     });
+    console.log('Contato atualizado')
   }
+
+  //insere na tabela de integrações, caso não exista
+  await sequelize.query(
+    `SELECT * FROM integracoes_HyperFlow Where inPessoasID = :PessoaID AND inProtocolo =:Protocolo  `,
+    {
+      type: QueryTypes.SELECT,
+      replacements: {
+        PessoaID: pessoaID,
+        Protocolo: protocolo
+      },
+    }
+  ).then((registros) => {
+    if (registros.length === 0) {
+      console.log('Nenhum registro encontrado - Vai inserir um novo protocolo');
+      sequelize
+        .query(
+          "INSERT INTO integracoes_HyperFlow (inPessoasID, inPessoasContatosID, inTelefone, inProtocolo, inLink) " +
+          "Values(:PessoaID, :ContatoID, :Telefone, :Protocolo, :Link)",
+          {
+            type: QueryTypes.INSERT,
+            replacements: {
+              PessoaID: pessoaID,
+              ContatoID: contatoID,
+              Telefone: telefone,
+              Protocolo: protocolo,
+              Link: link
+            }
+          }
+        )
+        .catch((err) => {
+          console.log("Erro: " + err.message);
+        });
+    }
+    else
+      console.log('Protocolo ' + protocolo + ' já existe na base')
+  }).catch((err) => {
+    console.error('Erro ao executar a consulta:', err);
+  });
+
 
   res.status(200).send("Protocolo recebido e salvo!");
 
