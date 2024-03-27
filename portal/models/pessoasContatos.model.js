@@ -23,12 +23,6 @@ module.exports = (sequelize, Sequelize) => {
         PesOrigemContato: {
           type: Sequelize.STRING,
         },
-        PesHyperProtocolo: {
-          type: Sequelize.STRING,
-        },
-        PesHyperLinkConversa: {
-          type: Sequelize.STRING
-        },
         PesPessoasID: {
             type: Sequelize.INTEGER
           },

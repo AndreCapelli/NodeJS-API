@@ -39,6 +39,19 @@ exports.novoProtocolo = async (req, res) => {
   var contatoID;
 
 
+    //Valida se a pessoa existe
+    const existentPessoa = await Pessoas.findOne({
+      where: {
+        Pessoas_ID: pessoaID,        
+      },
+    });
+
+    if (!existentPessoa) {
+      res.status(404).send("Pessoa não encontrada!");
+      return
+    }
+
+
   // Verifica se o registro já existe
   const existentRecord = await PessoasContatos.findOne({
     where: {
