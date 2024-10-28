@@ -91,7 +91,7 @@ require("./app/routes/cloudInformacoesUsoTelas.route")(app);
 require("./robmar/routes/robmar.route")(app);
 require("./portal/routes/pessoas.route")(app);
 require("./api_ligacao/routes/filial.route")(app);
-require("./omie/routes/omieRoute.route")(app);
+//require("./omie/routes/omieRoute.route")(app);
 
 // set port, listen for requests
 const PORT = 21000;
