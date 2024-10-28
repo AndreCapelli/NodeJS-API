@@ -4,9 +4,10 @@ const { QueryTypes } = require("sequelize");
 const funcoes = require("../../funcoes_utils/funcoes/funcoes");
 const fs = require("fs");
 const path = require("path");
+const { stringify } = require("querystring");
 
 exports.GravaTxt = async (req, res) => {
-  console.log('gravatxt' + req.body);
+  console.log('gravatxt' + stringify(req.body));
 
   const lead = JSON.parse(JSON.stringify(req.body));
   const idLead = lead.leads[0].id;
@@ -167,7 +168,7 @@ exports.newPerson = async (req, res) => {
     await sequelize
       .query(
         "INSERT INTO LayoutImportacoesLogs(LaUsuariosID, LaDataImportacao, LaLoteImportacao, LaResultado, LaMotivo) " +
-          "VALUES(13, GETDATE(), -15, 'RD: Robmar ', 'Pessoa não encontrada, será cadastrada') ",
+        "VALUES(13, GETDATE(), -15, 'RD: Robmar ', 'Pessoa não encontrada, será cadastrada') ",
         { type: QueryTypes.INSERT }
       )
       .catch((err) => {
