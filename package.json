@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/AndreCapelli/NodeJS-API#readme",
   "dependencies": {
+    "@wppconnect-team/wppconnect": "^1.30.3",
     "axios": "^0.21.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",

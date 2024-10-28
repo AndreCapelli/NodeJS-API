@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 
 exports.GravaTxt = async (req, res) => {
-  //console.log(req.body);
+  console.log(req.body);
 
   const lead = JSON.parse(JSON.stringify(req.body));
   const idLead = lead.leads[0].id;
