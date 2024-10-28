@@ -7,16 +7,16 @@ const path = require("path");
 const { stringify } = require("querystring");
 
 exports.GravaTxt = async (req, res) => {
-  console.log('gravatxt' + stringify(req.body));
+  console.log('gravatxt' + JSON.stringify(req.body));
 
-  const lead = JSON.parse(JSON.stringify(req.body));
-  const idLead = lead.leads[0].id;
-  const diretorio = path.basename(__dirname);
+  // const lead = JSON.parse(JSON.stringify(req.body));
+  // const idLead = lead.leads[0].id;
+  // const diretorio = path.basename(__dirname);
 
   console.log(__dirname);
 
   fs.writeFileSync(
-    "User_ID_" + idLead + ".txt",
+    "User_ID_BancoJohn.txt",
     JSON.stringify(req.body),
     (err) => {
       if (err) throw err;
