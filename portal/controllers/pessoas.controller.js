@@ -87,7 +87,7 @@ exports.novoProtocolo = async (req, res) => {
       console.error('Erro ao executar a consulta:', err);
     });
 
-    console.log('Contato inserido')
+    console.log('Contato inserido - ID:' + contatoID)
 
   } else {
     contatoID = existentRecord.PessoasContatos_ID;
