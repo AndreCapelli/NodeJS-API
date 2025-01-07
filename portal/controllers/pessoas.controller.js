@@ -78,6 +78,7 @@ exports.novoProtocolo = async (req, res) => {
       },
     }).then((pessoaContato) => {
       if (pessoaContato) {
+        console.log('achou o contato - ' + pessoaContato.PessoasContatos_ID)
         contatoID = pessoaContato.PessoasContatos_ID;
         // Faça o que precisa com o campo retornado
       } else {
