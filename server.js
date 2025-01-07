@@ -66,7 +66,11 @@ app.use(express.json({ limit: "50mb" }));
 
 // simple route
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome - API MaxMobile" });
+  const clientIP = req.headers['x-forwarded-for'] || req.ip;
+  res.json({
+    message: "Welcome - API MaxMobile",
+    clientIP: clientIP
+  });
 });
 
 const calc = require("./funcoes_utils/calculos/calculos");
