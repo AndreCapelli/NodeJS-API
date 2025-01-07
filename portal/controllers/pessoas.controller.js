@@ -71,7 +71,7 @@ exports.novoProtocolo = async (req, res) => {
     });
 
     //pega o id
-    PessoasContatos.findOne({
+    await PessoasContatos.findOne({
       where: {
         PesPessoasID: pessoaID,
         PesTelefone: telefone.substring(2, 50),
