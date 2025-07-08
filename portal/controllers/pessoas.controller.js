@@ -39,17 +39,17 @@ exports.novoProtocolo = async (req, res) => {
   var contatoID;
 
 
-    //Valida se a pessoa existe
-    const existentPessoa = await Pessoas.findOne({
-      where: {
-        Pessoas_ID: pessoaID,        
-      },
-    });
+  //Valida se a pessoa existe
+  const existentPessoa = await Pessoas.findOne({
+    where: {
+      Pessoas_ID: pessoaID,
+    },
+  });
 
-    if (!existentPessoa) {
-      res.status(404).send("Pessoa não encontrada!");
-      return
-    }
+  if (!existentPessoa) {
+    res.status(404).send("Pessoa não encontrada!");
+    return
+  }
 
 
   // Verifica se o registro já existe
@@ -1866,3 +1866,126 @@ exports.johnTeste = async (req, res) => {
 
   res.send("oi").status(200);
 };
+
+
+exports.registrarResumo = async (req, res) => {
+  try {
+    const {
+      resumoId,
+      operadorId,
+      codigoCampanha,
+      campanhaId,
+      dataHora,
+      historico,
+      origem,
+      pessoaId,
+      fonelistId,
+      dataInicio,
+      dataFim,
+      protocolo,
+      conseguiuContato,
+      motivoId
+    } = req.body;
+
+    const dataHoraFinal = dataHora || new Date();
+    const criterioOrigem = origem || 'API - MaxSmart';
+    const dataInicioFinal = dataInicio || new Date();
+    const dataFimFinal = dataFim || new Date();
+    const duracaoFicha = Math.abs(new Date(dataFimFinal) - new Date(dataInicioFinal)) / 60000;
+
+    if (!campanhaId && !codigoCampanha) {
+      return res.status(400).json({ mensagem: 'Campanha não informada.' });
+    }
+
+    let campanhaIdFinal = campanhaId;
+    let codigoCampanhaFinal = codigoCampanha;
+
+    if (campanhaId && !codigoCampanha) {
+      const campanha = await db('Campanhas')
+        .select('CaCodigo')
+        .where('Campanhas_ID', campanhaId)
+        .first();
+
+      if (!campanha) {
+        return res.status(400).json({ mensagem: 'Campanha não encontrada.' });
+      }
+
+      codigoCampanhaFinal = campanha.CaCodigo;
+    }
+
+
+    const tabelaFoneList = `Fone_List_${codigoCampanhaFinal.padStart(6, '0')}`;
+    const tabelaContatosFichas = `ContatosFichas_${codigoCampanhaFinal.padStart(6, '0')}`;
+
+    let fonelistIdFinal = fonelistId;
+
+    if (!pessoaId && !fonelistId) {
+      return res.status(400).json({ mensagem: 'Pessoa não informada.' });
+    }
+
+    if (pessoaId && !fonelistId) {
+      const result = await db(tabelaFoneList)
+        .select(`FN_FoneList_${codigoCampanha.padStart(6, '0')}_ID as id`)
+        .where(`FN_PessoasID`, pessoaId)
+        .first();
+
+      if (!result) {
+        return res.status(400).json({ mensagem: 'Pessoa não localizada na campanha.' });
+      }
+      fonelistIdFinal = result.id;
+    }
+
+    const usuarioExiste = await db('Usuarios').where('Usuarios_ID', operadorId).first();
+    if (!usuarioExiste) {
+      return res.status(400).json({ mensagem: 'Usuário informado não existe.' });
+    }
+
+    const resumoExiste = await db('ResumoDeOperacoes').where('ResumoDeOperacoes_ID', resumoId).first();
+    if (!resumoExiste) {
+      return res.status(400).json({ mensagem: 'Resumo de Operação não existe.' });
+    }
+
+    const campanhaExiste = await db('Campanhas').where('Campanhas_ID', campanhaId).first();
+    if (!campanhaExiste) {
+      return res.status(400).json({ mensagem: 'Campanha não existe.' });
+    }
+
+    if (motivoId) {
+      const motivoExiste = await db('Motivos').where('Motivos_ID', motivoId).first();
+      if (!motivoExiste) {
+        return res.status(400).json({ mensagem: 'Motivo não existe.' });
+      }
+    }
+
+    const insertData = {
+      CoFoneListsID: fonelistIdFinal,
+      CoDataInicioFicha: dataInicioFinal,
+      CoDataFimFicha: dataFimFinal,
+      CoDuracaoFicha: duracaoFicha,
+      CoUsuariosID: operadorId,
+      CoResumoOperacaoID: resumoId,
+      CoProtocolo: protocolo || null,
+      CoConseguiuContato: conseguiuContato || false,
+      CoMotivoRoID: motivoId || null,
+      CoCriterioOrigem: criterioOrigem,
+      CoMaquina: getComputerName(),
+      CoVersaoSistema: '5.0'
+    };
+
+    const [novoContatoId] = await db(tabelaContatosFichas).insert(insertData).returning(`${tabelaContatosFichas}_ID`);
+
+    return res.status(201).json({
+      mensagem: 'Registro inserido com sucesso.',
+      contatoFichaId: novoContatoId
+    });
+
+
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      mensagem: 'Erro ao registrar resumo de operação.',
+      erro: error.message
+    });
+  }
+}

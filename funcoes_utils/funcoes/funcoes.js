@@ -2,6 +2,7 @@ const db = require("../../portal/models/index");
 const sequelize = db.sequelize;
 const { QueryTypes } = require("sequelize");
 
+
 exports.fnc_RetiraNumerosString = function (text) {
   return text.replace(/\D+/g, "");
 };
@@ -197,4 +198,9 @@ exports.RetornaIndiceTabela = async (
 
   if (nomeIndice != "IPCA") return IndiceFinal;
   else IndiceAtual;
+};
+
+
+exports.getComputerName = () => {
+  return require('os').hostname();
 };

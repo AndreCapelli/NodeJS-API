@@ -10,6 +10,8 @@ module.exports = (app) => {
   router.get("/buscaDevedor/:Type&:Document", pessoa.buscaDevedor);
   router.get("/buscaDevedorTelefone/:Document", pessoa.buscaDevedorTelefone);
   router.post("/novoProtocolo/", pessoa.novoProtocolo);
+  router.post("/registrar-resumo/", pessoa.registrarResumo);
+
 
   app.use("/portal", router);
 };
