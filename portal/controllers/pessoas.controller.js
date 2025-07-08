@@ -1974,6 +1974,13 @@ exports.registrarResumo = async (req, res) => {
 
     const [novoContatoId] = await db(tabelaContatosFichas).insert(insertData).returning(`${tabelaContatosFichas}_ID`);
 
+    await db(tabelaFoneList)
+      .where(`FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID`, fonelistIdFinal)
+      .update({
+        FN_UltimoROID: resumoId,
+        FN_DataUltimoContato: dataHoraFinal
+      });
+
     return res.status(201).json({
       mensagem: 'Registro inserido com sucesso.',
       contatoFichaId: novoContatoId
