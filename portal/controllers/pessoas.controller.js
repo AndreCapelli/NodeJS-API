@@ -2017,7 +2017,7 @@ exports.registrarResumo = async (req, res) => {
     const [resultadoInsert] = await db.sequelize.query(
       `
     INSERT INTO ${tabelaContatosFichas} 
-      (CoFoneListsID, CoDataInicioFicha, CoDataFimFicha, CoDuracaoFicha,
+      (CoFoneListsID, CoDataInicioFicha, CoDataTerminoFicha, CoDuracaoFicha,
        CoUsuariosID, CoResumoOperacaoID, CoProtocolo, CoConseguiuContato,
        CoMotivoRoID, CoCriterioOrigem, CoMaquina, CoVersaoSistema)
        OUTPUT INSERTED.${tabelaContatosFichas}_ID
