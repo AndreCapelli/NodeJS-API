@@ -1,4 +1,4 @@
-import db from "../models/index.js";
+const db = require("../models/index");
 const sequelize = db.sequelize;
 const { QueryTypes, json, IndexHints, where } = require("sequelize");
 const Pessoas = db.pessoas;
