@@ -2011,7 +2011,8 @@ exports.registrarResumo = async (req, res) => {
       CoMotivoRoID: motivoId || null,
       CoCriterioOrigem: criterioOrigem,
       CoMaquina: funcoes.getComputerName(),
-      CoVersaoSistema: '5.0'
+      CoVersaoSistema: '5.0',
+      CoHistoricoFicha: historico
     };
 
     const [resultadoInsert] = await db.sequelize.query(
@@ -2019,12 +2020,12 @@ exports.registrarResumo = async (req, res) => {
     INSERT INTO ${tabelaContatosFichas} 
       (CoFoneListsID, CoDataInicioFicha, CoDataTerminoFicha, CoDuracaoFicha,
        CoUsuariosID, CoResumoOperacaoID, CoProtocolo, CoConseguiuContato,
-       CoMotivoRoID, CoCriterioOrigem, CoMaquina, CoVersaoSistema)
+       CoMotivoRoID, CoCriterioOrigem, CoMaquina, CoVersaoSistema, CoHistoricoFicha)
        OUTPUT INSERTED.${tabelaContatosFichas}_ID
     VALUES
       (:CoFoneListsID, :CoDataInicioFicha, :CoDataFimFicha, :CoDuracaoFicha,
        :CoUsuariosID, :CoResumoOperacaoID, :CoProtocolo, :CoConseguiuContato,
-       :CoMotivoRoID, :CoCriterioOrigem, :CoMaquina, :CoVersaoSistema)
+       :CoMotivoRoID, :CoCriterioOrigem, :CoMaquina, :CoVersaoSistema, :CoHistoricoFicha)
   `,
       {
         replacements: insertData,
