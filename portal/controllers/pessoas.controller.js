@@ -1,4 +1,4 @@
-const db = require("../models/index");
+import db from "../models/index.js";
 const sequelize = db.sequelize;
 const { QueryTypes, json, IndexHints, where } = require("sequelize");
 const Pessoas = db.pessoas;
@@ -1901,16 +1901,19 @@ exports.registrarResumo = async (req, res) => {
     let codigoCampanhaFinal = codigoCampanha;
 
     if (campanhaId && !codigoCampanha) {
-      const campanha = await db('Campanhas')
-        .select('CaCodigo')
-        .where('Campanhas_ID', campanhaId)
-        .first();
+      const [result] = await db.sequelize.query(
+        `SELECT CaCodigo FROM Campanhas WHERE Campanhas_ID = :campanhaId`,
+        {
+          replacements: { campanhaId },
+          type: db.Sequelize.QueryTypes.SELECT
+        }
+      );
 
-      if (!campanha) {
+      if (!result) {
         return res.status(400).json({ mensagem: 'Campanha não encontrada.' });
       }
 
-      codigoCampanhaFinal = campanha.CaCodigo;
+      codigoCampanhaFinal = result.CaCodigo;
     }
 
 
@@ -1924,38 +1927,77 @@ exports.registrarResumo = async (req, res) => {
     }
 
     if (pessoaId && !fonelistId) {
-      const result = await db(tabelaFoneList)
-        .select(`FN_FoneList_${codigoCampanha.padStart(6, '0')}_ID as id`)
-        .where(`FN_PessoasID`, pessoaId)
-        .first();
+      const [result] = await db.sequelize.query(
+        `SELECT FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID AS id
+     FROM Fone_List_${codigoCampanhaFinal.padStart(6, '0')}
+     WHERE FN_PessoasID = :pessoaId`,
+        {
+          replacements: { pessoaId },
+          type: db.Sequelize.QueryTypes.SELECT
+        }
+      );
 
       if (!result) {
         return res.status(400).json({ mensagem: 'Pessoa não localizada na campanha.' });
       }
+
       fonelistIdFinal = result.id;
     }
 
-    const usuarioExiste = await db('Usuarios').where('Usuarios_ID', operadorId).first();
+    // Verifica se o usuário existe
+    const [usuarioExiste] = await db.sequelize.query(
+      `SELECT 1 FROM Usuarios WHERE Usuarios_ID = :operadorId`,
+      {
+        replacements: { operadorId },
+        type: db.Sequelize.QueryTypes.SELECT
+      }
+    );
+
     if (!usuarioExiste) {
       return res.status(400).json({ mensagem: 'Usuário informado não existe.' });
     }
 
-    const resumoExiste = await db('ResumoDeOperacoes').where('ResumoDeOperacoes_ID', resumoId).first();
+    // Verifica se o resumo existe
+    const [resumoExiste] = await db.sequelize.query(
+      `SELECT 1 FROM ResumoDeOperacoes WHERE ResumoDeOperacoes_ID = :resumoId`,
+      {
+        replacements: { resumoId },
+        type: db.Sequelize.QueryTypes.SELECT
+      }
+    );
+
     if (!resumoExiste) {
       return res.status(400).json({ mensagem: 'Resumo de Operação não existe.' });
     }
 
-    const campanhaExiste = await db('Campanhas').where('Campanhas_ID', campanhaId).first();
+    //  Verifica se a campanha existe
+    const [campanhaExiste] = await db.sequelize.query(
+      `SELECT 1 FROM Campanhas WHERE Campanhas_ID = :campanhaId`,
+      {
+        replacements: { campanhaId },
+        type: db.Sequelize.QueryTypes.SELECT
+      }
+    );
+
     if (!campanhaExiste) {
       return res.status(400).json({ mensagem: 'Campanha não existe.' });
     }
 
+    // Verifica se o motivo existe (se informado)
     if (motivoId) {
-      const motivoExiste = await db('Motivos').where('Motivos_ID', motivoId).first();
+      const [motivoExiste] = await db.sequelize.query(
+        `SELECT 1 FROM Motivos WHERE Motivos_ID = :motivoId`,
+        {
+          replacements: { motivoId },
+          type: db.Sequelize.QueryTypes.SELECT
+        }
+      );
+
       if (!motivoExiste) {
         return res.status(400).json({ mensagem: 'Motivo não existe.' });
       }
     }
+
 
     const insertData = {
       CoFoneListsID: fonelistIdFinal,
@@ -1972,14 +2014,46 @@ exports.registrarResumo = async (req, res) => {
       CoVersaoSistema: '5.0'
     };
 
-    const [novoContatoId] = await db(tabelaContatosFichas).insert(insertData).returning(`${tabelaContatosFichas}_ID`);
+    const [resultadoInsert] = await db.sequelize.query(
+      `
+    INSERT INTO ${tabelaContatosFichas} 
+      (CoFoneListsID, CoDataInicioFicha, CoDataFimFicha, CoDuracaoFicha,
+       CoUsuariosID, CoResumoOperacaoID, CoProtocolo, CoConseguiuContato,
+       CoMotivoRoID, CoCriterioOrigem, CoMaquina, CoVersaoSistema)
+    VALUES
+      (:CoFoneListsID, :CoDataInicioFicha, :CoDataFimFicha, :CoDuracaoFicha,
+       :CoUsuariosID, :CoResumoOperacaoID, :CoProtocolo, :CoConseguiuContato,
+       :CoMotivoRoID, :CoCriterioOrigem, :CoMaquina, :CoVersaoSistema)
+    RETURNING ${tabelaContatosFichas}_ID
+  `,
+      {
+        replacements: insertData,
+        type: db.Sequelize.QueryTypes.INSERT
+      }
+    );
 
-    await db(tabelaFoneList)
-      .where(`FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID`, fonelistIdFinal)
-      .update({
-        FN_UltimoROID: resumoId,
-        FN_DataUltimoContato: dataHoraFinal
-      });
+    const novoContatoId = resultadoInsert[0][`${tabelaContatosFichas}_ID`];
+
+
+    await db.sequelize.query(
+      `
+    UPDATE ${tabelaFoneList}
+    SET 
+      FN_UltimoROID = :resumoId,
+      FN_DataUltimoContato = :dataHoraFinal
+    WHERE 
+      FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID = :fonelistIdFinal
+  `,
+      {
+        replacements: {
+          resumoId,
+          dataHoraFinal,
+          fonelistIdFinal
+        },
+        type: db.Sequelize.QueryTypes.UPDATE
+      }
+    );
+
 
     return res.status(201).json({
       mensagem: 'Registro inserido com sucesso.',
