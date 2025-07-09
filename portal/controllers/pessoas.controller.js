@@ -2020,11 +2020,11 @@ exports.registrarResumo = async (req, res) => {
       (CoFoneListsID, CoDataInicioFicha, CoDataFimFicha, CoDuracaoFicha,
        CoUsuariosID, CoResumoOperacaoID, CoProtocolo, CoConseguiuContato,
        CoMotivoRoID, CoCriterioOrigem, CoMaquina, CoVersaoSistema)
+       OUTPUT INSERTED.${tabelaContatosFichas}_ID
     VALUES
       (:CoFoneListsID, :CoDataInicioFicha, :CoDataFimFicha, :CoDuracaoFicha,
        :CoUsuariosID, :CoResumoOperacaoID, :CoProtocolo, :CoConseguiuContato,
        :CoMotivoRoID, :CoCriterioOrigem, :CoMaquina, :CoVersaoSistema)
-    RETURNING ${tabelaContatosFichas}_ID
   `,
       {
         replacements: insertData,
