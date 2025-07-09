@@ -2010,7 +2010,7 @@ exports.registrarResumo = async (req, res) => {
       CoConseguiuContato: conseguiuContato || false,
       CoMotivoRoID: motivoId || null,
       CoCriterioOrigem: criterioOrigem,
-      CoMaquina: getComputerName(),
+      CoMaquina: funcoes.getComputerName(),
       CoVersaoSistema: '5.0'
     };
 
