@@ -11,6 +11,7 @@ module.exports = (app) => {
   router.get("/buscaDevedorTelefone/:Document", pessoa.buscaDevedorTelefone);
   router.post("/novoProtocolo/", pessoa.novoProtocolo);
   router.post("/registrar-resumo/", pessoa.registrarResumo);
+  router.get("/returncalltechoficial/", pessoa.retornaCalltechOficial);
 
 
   app.use("/portal", router);

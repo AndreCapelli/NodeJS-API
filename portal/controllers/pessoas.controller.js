@@ -10,6 +10,8 @@ const Op = db.Sequelize.Op;
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const sql = require('mssql');
+
 
 // const options = {
 //   key: fs.readFileSync("path/to/private.key"),
@@ -28,6 +30,24 @@ const { Sequelize } = require("../models/index");
  * Os métodos chamados após a const Pessoa são nativos do Sequelize, na documentação terá a explicação de todos
  * o resto é apenas JS
  */
+
+exports.retornaCalltechOficial = async (req, res) => {
+  try {
+    const dados = {
+      Servidor: "200.150.198.251",
+      Usuario: "sa",
+      Senha: "vbu'eoA A63",
+      Base: "Calltech_Oficial"
+    };
+
+    res.status(200).json(dados);
+  } catch (error) {
+    console.error("Erro ao retornar dados da Calltech Oficial:", error);
+    res.status(500).json({ erro: "Erro interno do servidor" });
+  }
+};
+
+
 
 exports.novoProtocolo = async (req, res) => {
 
