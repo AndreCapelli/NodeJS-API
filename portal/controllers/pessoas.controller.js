@@ -37,7 +37,11 @@ exports.retornaCalltechOficial = async (req, res) => {
       Servidor: "200.150.198.251",
       Usuario: "sa",
       Senha: "vbu'eoA A63",
-      Base: "Calltech_Oficial"
+      Base: "Calltech_Oficial",
+      Host: "calltech.xyz",
+      SenhaFTP: "k&4-1=B,",
+      UsuarioFTP: "u453044404.calltechnet.com.br",
+      CaminhoFTP: "calltechnet.com.br/Atualizador"
     };
 
     res.status(200).json(dados);
