@@ -13,6 +13,8 @@ module.exports = (app) => {
   router.post("/registrar-resumo/", pessoa.registrarResumo);
   router.get("/returncalltechoficial/", pessoa.retornaCalltechOficial);
 
+  router.get("/baixarArquivosTenda/", pessoa.baixarArquivosTenda);
+
 
   app.use("/portal", router);
 };

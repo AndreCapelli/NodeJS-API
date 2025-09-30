@@ -1,3 +1,4 @@
+require("dotenv").config();
 const db = require("../models/index");
 const sequelize = db.sequelize;
 const { QueryTypes, json, IndexHints, where } = require("sequelize");
@@ -11,6 +12,9 @@ const https = require("https");
 const fs = require("fs");
 const path = require("path");
 const sql = require('mssql');
+
+const Client = require("ssh2-sftp-client");
+const ftp = require("basic-ftp");
 
 
 // const options = {
@@ -1892,206 +1896,362 @@ exports.johnTeste = async (req, res) => {
 };
 
 
-exports.registrarResumo = async (req, res) => {
+exports.registrarResumoLote = async (req, res) => {
   try {
-    const {
-      resumoId,
-      operadorId,
-      codigoCampanha,
-      campanhaId,
-      dataHora,
-      historico,
-      origem,
-      pessoaId,
-      fonelistId,
-      dataInicio,
-      dataFim,
-      protocolo,
-      conseguiuContato,
-      motivoId
-    } = req.body;
+    const { registros } = req.body;
 
-    const dataHoraFinal = dataHora || new Date();
-    const criterioOrigem = origem || 'API - MaxSmart';
-    const dataInicioFinal = dataInicio || new Date();
-    const dataFimFinal = dataFim || new Date();
-    const duracaoFicha = Math.abs(new Date(dataFimFinal) - new Date(dataInicioFinal)) / 60000;
-
-    if (!campanhaId && !codigoCampanha) {
-      return res.status(400).json({ mensagem: 'Campanha não informada.' });
+    if (!Array.isArray(registros) || registros.length === 0) {
+      return res.status(400).json({ mensagem: 'Array de registros não informado ou vazio.' });
     }
 
-    let campanhaIdFinal = campanhaId;
-    let codigoCampanhaFinal = codigoCampanha;
-
-    if (campanhaId && !codigoCampanha) {
-      const [result] = await db.sequelize.query(
-        `SELECT CaCodigo FROM Campanhas WHERE Campanhas_ID = :campanhaId`,
-        {
-          replacements: { campanhaId },
-          type: db.Sequelize.QueryTypes.SELECT
-        }
-      );
-
-      if (!result) {
-        return res.status(400).json({ mensagem: 'Campanha não encontrada.' });
-      }
-
-      codigoCampanhaFinal = result.CaCodigo;
-    }
-
-
-    const tabelaFoneList = `Fone_List_${codigoCampanhaFinal.padStart(6, '0')}`;
-    const tabelaContatosFichas = `ContatosFichas_${codigoCampanhaFinal.padStart(6, '0')}`;
-
-    let fonelistIdFinal = fonelistId;
-
-    if (!pessoaId && !fonelistId) {
-      return res.status(400).json({ mensagem: 'Pessoa não informada.' });
-    }
-
-    if (pessoaId && !fonelistId) {
-      const [result] = await db.sequelize.query(
-        `SELECT FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID AS id
-     FROM Fone_List_${codigoCampanhaFinal.padStart(6, '0')}
-     WHERE FN_PessoasID = :pessoaId`,
-        {
-          replacements: { pessoaId },
-          type: db.Sequelize.QueryTypes.SELECT
-        }
-      );
-
-      if (!result) {
-        return res.status(400).json({ mensagem: 'Pessoa não localizada na campanha.' });
-      }
-
-      fonelistIdFinal = result.id;
-    }
-
-    // Verifica se o usuário existe
-    const [usuarioExiste] = await db.sequelize.query(
-      `SELECT 1 FROM Usuarios WHERE Usuarios_ID = :operadorId`,
-      {
-        replacements: { operadorId },
-        type: db.Sequelize.QueryTypes.SELECT
-      }
-    );
-
-    if (!usuarioExiste) {
-      return res.status(400).json({ mensagem: 'Usuário informado não existe.' });
-    }
-
-    // Verifica se o resumo existe
-    const [resumoExiste] = await db.sequelize.query(
-      `SELECT 1 FROM ResumoDeOperacoes WHERE ResumoDeOperacoes_ID = :resumoId`,
-      {
-        replacements: { resumoId },
-        type: db.Sequelize.QueryTypes.SELECT
-      }
-    );
-
-    if (!resumoExiste) {
-      return res.status(400).json({ mensagem: 'Resumo de Operação não existe.' });
-    }
-
-    //  Verifica se a campanha existe
-    const [campanhaExiste] = await db.sequelize.query(
-      `SELECT 1 FROM Campanhas WHERE Campanhas_ID = :campanhaId`,
-      {
-        replacements: { campanhaId },
-        type: db.Sequelize.QueryTypes.SELECT
-      }
-    );
-
-    if (!campanhaExiste) {
-      return res.status(400).json({ mensagem: 'Campanha não existe.' });
-    }
-
-    // Verifica se o motivo existe (se informado)
-    if (motivoId) {
-      const [motivoExiste] = await db.sequelize.query(
-        `SELECT 1 FROM Motivos WHERE Motivos_ID = :motivoId`,
-        {
-          replacements: { motivoId },
-          type: db.Sequelize.QueryTypes.SELECT
-        }
-      );
-
-      if (!motivoExiste) {
-        return res.status(400).json({ mensagem: 'Motivo não existe.' });
-      }
-    }
-
-
-    const insertData = {
-      CoFoneListsID: fonelistIdFinal,
-      CoDataInicioFicha: dataInicioFinal,
-      CoDataFimFicha: dataFimFinal,
-      CoDuracaoFicha: duracaoFicha,
-      CoUsuariosID: operadorId,
-      CoResumoOperacaoID: resumoId,
-      CoProtocolo: protocolo || null,
-      CoConseguiuContato: conseguiuContato || false,
-      CoMotivoRoID: motivoId || null,
-      CoCriterioOrigem: criterioOrigem,
-      CoMaquina: funcoes.getComputerName(),
-      CoVersaoSistema: '5.0',
-      CoHistoricoFicha: historico
+    const resultados = {
+      sucessos: [],
+      erros: []
     };
 
-    const [resultadoInsert] = await db.sequelize.query(
-      `
-    INSERT INTO ${tabelaContatosFichas} 
-      (CoFoneListsID, CoDataInicioFicha, CoDataTerminoFicha, CoDuracaoFicha,
-       CoUsuariosID, CoResumoOperacaoID, CoProtocolo, CoConseguiuContato,
-       CoMotivoRoID, CoCriterioOrigem, CoMaquina, CoVersaoSistema, CoHistoricoFicha)
-       OUTPUT INSERTED.${tabelaContatosFichas}_ID
-    VALUES
-      (:CoFoneListsID, :CoDataInicioFicha, :CoDataFimFicha, :CoDuracaoFicha,
-       :CoUsuariosID, :CoResumoOperacaoID, :CoProtocolo, :CoConseguiuContato,
-       :CoMotivoRoID, :CoCriterioOrigem, :CoMaquina, :CoVersaoSistema, :CoHistoricoFicha)
-  `,
-      {
-        replacements: insertData,
-        type: db.Sequelize.QueryTypes.INSERT
+    const registrosPorCampanha = {};
+    
+    for (let i = 0; i < registros.length; i++) {
+      const registro = registros[i];
+      const chave = registro.campanhaId || registro.codigoCampanha;
+      
+      if (!chave) {
+        resultados.erros.push({
+          indice: i,
+          registro,
+          erro: 'Campanha não informada.'
+        });
+        continue;
       }
-    );
 
-    const novoContatoId = resultadoInsert[0][`${tabelaContatosFichas}_ID`];
-
-
-    await db.sequelize.query(
-      `
-    UPDATE ${tabelaFoneList}
-    SET 
-      FN_UltimoROID = :resumoId,
-      FN_DataUltimoContato = :dataHoraFinal
-    WHERE 
-      FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID = :fonelistIdFinal
-  `,
-      {
-        replacements: {
-          resumoId,
-          dataHoraFinal,
-          fonelistIdFinal
-        },
-        type: db.Sequelize.QueryTypes.UPDATE
+      if (!registrosPorCampanha[chave]) {
+        registrosPorCampanha[chave] = [];
       }
-    );
+      
+      registrosPorCampanha[chave].push({ ...registro, indice: i });
+    }
 
+    
+    for (const chaveCampanha in registrosPorCampanha) {
+      const registrosCampanha = registrosPorCampanha[chaveCampanha];
+      const primeiroRegistro = registrosCampanha[0];
+      
+      let campanhaIdFinal = primeiroRegistro.campanhaId;
+      let codigoCampanhaFinal = primeiroRegistro.codigoCampanha;
+
+      // Busca código da campanha se necessário
+      if (campanhaIdFinal && !codigoCampanhaFinal) {
+        const [result] = await db.sequelize.query(
+          `SELECT CaCodigo FROM Campanhas WHERE Campanhas_ID = :campanhaId`,
+          {
+            replacements: { campanhaId: campanhaIdFinal },
+            type: db.Sequelize.QueryTypes.SELECT
+          }
+        );
+
+        if (!result) {
+          registrosCampanha.forEach(reg => {
+            resultados.erros.push({
+              indice: reg.indice,
+              registro: reg,
+              erro: 'Campanha não encontrada.'
+            });
+          });
+          continue;
+        }
+
+        codigoCampanhaFinal = result.CaCodigo;
+      }
+
+      const tabelaFoneList = `Fone_List_${codigoCampanhaFinal.padStart(6, '0')}`;
+      const tabelaContatosFichas = `ContatosFichas_${codigoCampanhaFinal.padStart(6, '0')}`;
+
+      // Valida IDs únicos em lote
+      const operadoresIds = [...new Set(registrosCampanha.map(r => r.operadorId).filter(Boolean))];
+      const resumosIds = [...new Set(registrosCampanha.map(r => r.resumoId).filter(Boolean))];
+      const motivosIds = [...new Set(registrosCampanha.map(r => r.motivoId).filter(Boolean))];
+      const pessoasIds = [...new Set(registrosCampanha.map(r => r.pessoaId).filter(r => r && !r.fonelistId))];
+
+      // Valida operadores
+      if (operadoresIds.length > 0) {
+        const operadoresValidos = await db.sequelize.query(
+          `SELECT Usuarios_ID FROM Usuarios WHERE Usuarios_ID IN (:ids)`,
+          {
+            replacements: { ids: operadoresIds },
+            type: db.Sequelize.QueryTypes.SELECT
+          }
+        );
+        const idsValidos = new Set(operadoresValidos.map(o => o.Usuarios_ID));
+        
+        registrosCampanha.forEach(reg => {
+          if (reg.operadorId && !idsValidos.has(reg.operadorId)) {
+            reg._erroValidacao = 'Usuário não existe.';
+          }
+        });
+      }
+
+      // Valida resumos
+      if (resumosIds.length > 0) {
+        const resumosValidos = await db.sequelize.query(
+          `SELECT ResumoDeOperacoes_ID FROM ResumoDeOperacoes WHERE ResumoDeOperacoes_ID IN (:ids)`,
+          {
+            replacements: { ids: resumosIds },
+            type: db.Sequelize.QueryTypes.SELECT
+          }
+        );
+        const idsValidos = new Set(resumosValidos.map(r => r.ResumoDeOperacoes_ID));
+        
+        registrosCampanha.forEach(reg => {
+          if (reg.resumoId && !idsValidos.has(reg.resumoId)) {
+            reg._erroValidacao = 'Resumo de Operação não existe.';
+          }
+        });
+      }
+
+      // Valida motivos
+      if (motivosIds.length > 0) {
+        const motivosValidos = await db.sequelize.query(
+          `SELECT Motivos_ID FROM Motivos WHERE Motivos_ID IN (:ids)`,
+          {
+            replacements: { ids: motivosIds },
+            type: db.Sequelize.QueryTypes.SELECT
+          }
+        );
+        const idsValidos = new Set(motivosValidos.map(m => m.Motivos_ID));
+        
+        registrosCampanha.forEach(reg => {
+          if (reg.motivoId && !idsValidos.has(reg.motivoId)) {
+            reg._erroValidacao = 'Motivo não existe.';
+          }
+        });
+      }
+
+      // Busca fonelistIds para pessoasIds
+      if (pessoasIds.length > 0) {
+        const fonelistsPorPessoa = await db.sequelize.query(
+          `SELECT FN_PessoasID, FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID AS id
+           FROM ${tabelaFoneList}
+           WHERE FN_PessoasID IN (:ids)`,
+          {
+            replacements: { ids: pessoasIds },
+            type: db.Sequelize.QueryTypes.SELECT
+          }
+        );
+        
+        const mapaPessoas = new Map(
+          fonelistsPorPessoa.map(f => [f.FN_PessoasID, f.id])
+        );
+
+        registrosCampanha.forEach(reg => {
+          if (reg.pessoaId && !reg.fonelistId) {
+            const fonelistId = mapaPessoas.get(reg.pessoaId);
+            if (fonelistId) {
+              reg.fonelistId = fonelistId;
+            } else {
+              reg._erroValidacao = 'Pessoa não localizada na campanha.';
+            }
+          }
+        });
+      }
+
+      // Prepara inserts em lote
+      const registrosValidos = registrosCampanha.filter(reg => {
+        if (reg._erroValidacao) {
+          resultados.erros.push({
+            indice: reg.indice,
+            registro: reg,
+            erro: reg._erroValidacao
+          });
+          return false;
+        }
+        
+        if (!reg.pessoaId && !reg.fonelistId) {
+          resultados.erros.push({
+            indice: reg.indice,
+            registro: reg,
+            erro: 'Pessoa não informada.'
+          });
+          return false;
+        }
+        
+        return true;
+      });
+
+      if (registrosValidos.length === 0) continue;
+
+      // Insere em lote
+      const valoresInsert = registrosValidos.map(reg => {
+        const dataHoraFinal = reg.dataHora || new Date();
+        const criterioOrigem = reg.origem || 'API - MaxSmart';
+        const dataInicioFinal = reg.dataInicio || new Date();
+        const dataFimFinal = reg.dataFim || new Date();
+        const duracaoFicha = Math.abs(new Date(dataFimFinal) - new Date(dataInicioFinal)) / 60000;
+
+        return {
+          CoFoneListsID: reg.fonelistId,
+          CoDataInicioFicha: dataInicioFinal,
+          CoDataFimFicha: dataFimFinal,
+          CoDuracaoFicha: duracaoFicha,
+          CoUsuariosID: reg.operadorId,
+          CoResumoOperacaoID: reg.resumoId,
+          CoProtocolo: reg.protocolo || null,
+          CoConseguiuContato: reg.conseguiuContato || false,
+          CoMotivoRoID: reg.motivoId || null,
+          CoCriterioOrigem: criterioOrigem,
+          CoMaquina: funcoes.getComputerName(),
+          CoVersaoSistema: '5.0',
+          CoHistoricoFicha: reg.historico,
+          _dataHoraFinal: dataHoraFinal,
+          _indice: reg.indice,
+          _resumoId: reg.resumoId
+        };
+      });
+
+      // Insert múltiplo
+      const placeholders = valoresInsert.map((_, i) => 
+        `(:CoFoneListsID${i}, :CoDataInicioFicha${i}, :CoDataFimFicha${i}, :CoDuracaoFicha${i},
+         :CoUsuariosID${i}, :CoResumoOperacaoID${i}, :CoProtocolo${i}, :CoConseguiuContato${i},
+         :CoMotivoRoID${i}, :CoCriterioOrigem${i}, :CoMaquina${i}, :CoVersaoSistema${i}, :CoHistoricoFicha${i})`
+      ).join(',\n');
+
+      const replacements = {};
+      valoresInsert.forEach((val, i) => {
+        Object.keys(val).forEach(key => {
+          if (!key.startsWith('_')) {
+            replacements[`${key}${i}`] = val[key];
+          }
+        });
+      });
+
+      const [resultadosInsert] = await db.sequelize.query(
+        `INSERT INTO ${tabelaContatosFichas} 
+          (CoFoneListsID, CoDataInicioFicha, CoDataTerminoFicha, CoDuracaoFicha,
+           CoUsuariosID, CoResumoOperacaoID, CoProtocolo, CoConseguiuContato,
+           CoMotivoRoID, CoCriterioOrigem, CoMaquina, CoVersaoSistema, CoHistoricoFicha)
+         OUTPUT INSERTED.${tabelaContatosFichas}_ID
+         VALUES ${placeholders}`,
+        {
+          replacements,
+          type: db.Sequelize.QueryTypes.INSERT
+        }
+      );
+
+      // Update em lote do FoneList
+      const updatesPromises = valoresInsert.map((val, i) => {
+        return db.sequelize.query(
+          `UPDATE ${tabelaFoneList}
+           SET FN_UltimoROID = :resumoId,
+               FN_DataUltimoContato = :dataHora
+           WHERE FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID = :fonelistId`,
+          {
+            replacements: {
+              resumoId: val._resumoId,
+              dataHora: val._dataHoraFinal,
+              fonelistId: val.CoFoneListsID
+            },
+            type: db.Sequelize.QueryTypes.UPDATE
+          }
+        );
+      });
+
+      await Promise.all(updatesPromises);
+
+      // Adiciona sucessos
+      resultadosInsert.forEach((result, i) => {
+        resultados.sucessos.push({
+          indice: valoresInsert[i]._indice,
+          contatoFichaId: result[`${tabelaContatosFichas}_ID`]
+        });
+      });
+    }
 
     return res.status(201).json({
-      mensagem: 'Registro inserido com sucesso.',
-      contatoFichaId: novoContatoId
+      mensagem: 'Processamento em lote concluído.',
+      total: registros.length,
+      sucessos: resultados.sucessos.length,
+      erros: resultados.erros.length,
+      detalhes: resultados
     });
-
-
 
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      mensagem: 'Erro ao registrar resumo de operação.',
+      mensagem: 'Erro ao registrar resumos em lote.',
       erro: error.message
     });
   }
-}
+};
+
+
+exports.baixarArquivosTenda = async (req, res) => {
+  const sftp = new Client();
+
+  try {
+    // 🔹 1) Conectar no SFTP
+    await sftp.connect({
+      host: process.env.SFTP_HOST,
+      port: process.env.SFTP_PORT || 22,
+      username: process.env.SFTP_USER,
+      password: process.env.SFTP_PASS,
+    });
+
+    console.log("✅ Conectado ao SFTP");
+
+    const remoteDir = process.env.SFTP_DIR || "/";
+    const arquivos = await sftp.list(remoteDir);
+
+    // 🔹 2) Garantir pasta temp local
+    const tempDir = path.join(process.cwd(), "temp");
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir);
+    }
+
+    const processados = [];
+
+    for (const file of arquivos) {
+      if (!file.name.endsWith(".txt")) continue;
+
+      const localPath = path.join(tempDir, file.name);
+      const remotePath = `${remoteDir}/${file.name}`;
+      const remoteNovo = `${remoteDir}/Processado_${file.name}`;
+
+      // 🔹 3) Baixar do SFTP
+      await sftp.get(remotePath, localPath);
+      console.log(`⬇️  Baixado do SFTP: ${file.name}`);
+
+      // 🔹 4) Subir para FTP comum
+      const client = new ftp.Client();
+      await client.access({
+        host: process.env.FTP_HOST,
+        port: process.env.FTP_PORT || 21,
+        user: process.env.FTP_USER,
+        password: process.env.FTP_PASS,
+        secure: false,
+      });
+
+      await client.uploadFrom(localPath, file.name);
+      console.log(`⬆️  Enviado para FTP: ${file.name}`);
+      await client.close();
+
+      // 🔹 5) Renomear no SFTP
+      await sftp.rename(remotePath, remoteNovo);
+      console.log(`✏️  Renomeado no SFTP para: Processado_${file.name}`);
+
+      processados.push(file.name);
+    }
+
+    await sftp.end();
+
+    return res.json({
+      sucesso: true,
+      mensagem: "Arquivos transferidos e renomeados",
+      arquivos: processados,
+    });
+  } catch (err) {
+    console.error("❌ Erro ao transferir arquivos:", err);
+    return res.status(500).json({
+      sucesso: false,
+      erro: err.message,
+    });
+  }
+};
