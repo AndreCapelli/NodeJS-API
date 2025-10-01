@@ -10,7 +10,7 @@ module.exports = (app) => {
   router.get("/buscaDevedor/:Type&:Document", pessoa.buscaDevedor);
   router.get("/buscaDevedorTelefone/:Document", pessoa.buscaDevedorTelefone);
   router.post("/novoProtocolo/", pessoa.novoProtocolo);
-  router.post("/registrar-resumo/", pessoa.registrarResumo);
+  router.post("/registrarResumo/", pessoa.registrarResumo);
   router.get("/returncalltechoficial/", pessoa.retornaCalltechOficial);
 
   router.get("/baixarArquivosTenda/", pessoa.baixarArquivosTenda);

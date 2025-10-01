@@ -1896,7 +1896,7 @@ exports.johnTeste = async (req, res) => {
 };
 
 
-exports.registrarResumoLote = async (req, res) => {
+exports.registrarResumo = async (req, res) => {
   try {
     const { registros } = req.body;
 
