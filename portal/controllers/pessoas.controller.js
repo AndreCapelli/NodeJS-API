@@ -13,9 +13,6 @@ const fs = require("fs");
 const path = require("path");
 const sql = require('mssql');
 
-const Client = require("ssh2-sftp-client");
-const ftp = require("basic-ftp");
-
 
 // const options = {
 //   key: fs.readFileSync("path/to/private.key"),
