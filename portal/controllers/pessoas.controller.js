@@ -7,6 +7,18 @@ const PessoasContatos = db.pessoasContatos;
 const Movimentacoes = db.movimentacoes;
 const Politicas = db.politicas;
 const Op = db.Sequelize.Op;
+const Firebird = require('node-firebird');
+
+const fbOptions = {
+  host: '200.150.198.251',
+  port: 3050,
+  database: 'C:\\Toth\\TOTH.FDB',
+  user: 'SYSDBA',
+  password: 'masterkey',
+  lowercase_keys: false,
+  role: null,
+  pageSize: 4096,
+};
 
 const https = require("https");
 const fs = require("fs");
@@ -2251,4 +2263,63 @@ exports.baixarArquivosTenda = async (req, res) => {
       erro: err.message,
     });
   }
+};
+
+exports.inserirPeso = async (req, res) => {
+
+  const pesagemID = req.body.pesagemID;
+  const op = req.body.op;
+  const valor = req.body.valor;
+
+  if (!pesagemID || !op || valor === undefined) {
+    res.status(400).send("Campos pesagemID, op e valor são obrigatórios!");
+    return;
+  }
+
+  Firebird.attach(fbOptions, function (err, db) {
+    if (err) {
+      console.error('Erro ao conectar Firebird:', err);
+      res.status(500).send("Erro ao conectar Firebird: " + err.message);
+      return;
+    }
+
+    // Verifica se já existe
+    db.query(
+      'SELECT * FROM Pesagem_Remota WHERE PESAGEMID = ?',
+      [pesagemID],
+      function (err, result) {
+        if (err) {
+          console.error('Erro ao consultar:', err);
+          db.detach();
+          res.status(500).send("Erro ao consultar: " + err.message);
+          return;
+        }
+
+        if (result && result.length > 0) {
+          db.detach();
+          res.status(409).send("PesagemID " + pesagemID + " já existe na base!");
+          return;
+        }
+
+        // Insere
+        db.query(
+          'INSERT INTO Pesagem_Remota (PESAGEMID, OP, VALOR) VALUES (?, ?, ?)',
+          [pesagemID, op, valor],
+          function (err) {
+            db.detach();
+
+            if (err) {
+              console.error('Erro ao inserir peso:', err);
+              res.status(500).send("Erro ao inserir peso: " + err.message);
+              return;
+            }
+
+            console.log('Peso inserido - PesagemID: ' + pesagemID + ' OP: ' + op + ' Valor: ' + valor);
+            res.status(201).send("Peso inserido com sucesso!");
+          }
+        );
+      }
+    );
+  });
+
 };

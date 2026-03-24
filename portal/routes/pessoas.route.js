@@ -15,6 +15,8 @@ module.exports = (app) => {
 
   router.get("/baixarArquivosTenda/", pessoa.baixarArquivosTenda);
 
+  router.post("/toth/Pesar/", pessoa.novoProtocolo);
+
 
   app.use("/portal", router);
 };
