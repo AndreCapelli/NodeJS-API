@@ -1919,11 +1919,11 @@ exports.registrarResumo = async (req, res) => {
     };
 
     const registrosPorCampanha = {};
-    
+
     for (let i = 0; i < registros.length; i++) {
       const registro = registros[i];
       const chave = registro.campanhaId || registro.codigoCampanha;
-      
+
       if (!chave) {
         resultados.erros.push({
           indice: i,
@@ -1936,15 +1936,15 @@ exports.registrarResumo = async (req, res) => {
       if (!registrosPorCampanha[chave]) {
         registrosPorCampanha[chave] = [];
       }
-      
+
       registrosPorCampanha[chave].push({ ...registro, indice: i });
     }
 
-    
+
     for (const chaveCampanha in registrosPorCampanha) {
       const registrosCampanha = registrosPorCampanha[chaveCampanha];
       const primeiroRegistro = registrosCampanha[0];
-      
+
       let campanhaIdFinal = primeiroRegistro.campanhaId;
       let codigoCampanhaFinal = primeiroRegistro.codigoCampanha;
 
@@ -1991,7 +1991,7 @@ exports.registrarResumo = async (req, res) => {
           }
         );
         const idsValidos = new Set(operadoresValidos.map(o => o.Usuarios_ID));
-        
+
         registrosCampanha.forEach(reg => {
           if (reg.operadorId && !idsValidos.has(reg.operadorId)) {
             reg._erroValidacao = 'Usuário não existe.';
@@ -2009,7 +2009,7 @@ exports.registrarResumo = async (req, res) => {
           }
         );
         const idsValidos = new Set(resumosValidos.map(r => r.ResumoDeOperacoes_ID));
-        
+
         registrosCampanha.forEach(reg => {
           if (reg.resumoId && !idsValidos.has(reg.resumoId)) {
             reg._erroValidacao = 'Resumo de Operação não existe.';
@@ -2027,7 +2027,7 @@ exports.registrarResumo = async (req, res) => {
           }
         );
         const idsValidos = new Set(motivosValidos.map(m => m.Motivos_ID));
-        
+
         registrosCampanha.forEach(reg => {
           if (reg.motivoId && !idsValidos.has(reg.motivoId)) {
             reg._erroValidacao = 'Motivo não existe.';
@@ -2046,7 +2046,7 @@ exports.registrarResumo = async (req, res) => {
             type: db.Sequelize.QueryTypes.SELECT
           }
         );
-        
+
         const mapaPessoas = new Map(
           fonelistsPorPessoa.map(f => [f.FN_PessoasID, f.id])
         );
@@ -2073,7 +2073,7 @@ exports.registrarResumo = async (req, res) => {
           });
           return false;
         }
-        
+
         if (!reg.pessoaId && !reg.fonelistId) {
           resultados.erros.push({
             indice: reg.indice,
@@ -2082,7 +2082,7 @@ exports.registrarResumo = async (req, res) => {
           });
           return false;
         }
-        
+
         return true;
       });
 
@@ -2117,7 +2117,7 @@ exports.registrarResumo = async (req, res) => {
       });
 
       // Insert múltiplo
-      const placeholders = valoresInsert.map((_, i) => 
+      const placeholders = valoresInsert.map((_, i) =>
         `(:CoFoneListsID${i}, :CoDataInicioFicha${i}, :CoDataFimFicha${i}, :CoDuracaoFicha${i},
          :CoUsuariosID${i}, :CoResumoOperacaoID${i}, :CoProtocolo${i}, :CoConseguiuContato${i},
          :CoMotivoRoID${i}, :CoCriterioOrigem${i}, :CoMaquina${i}, :CoVersaoSistema${i}, :CoHistoricoFicha${i})`
@@ -2271,8 +2271,8 @@ exports.inserirPeso = async (req, res) => {
   const op = req.body.op;
   const valor = req.body.valor;
 
-  if (!pesagemID || !op || valor === undefined) {
-    res.status(400).send("Campos pesagemID, op e valor são obrigatórios!");
+  if (!op) {
+    res.status(400).send("Campo op obrigatório!");
     return;
   }
 
@@ -2303,7 +2303,7 @@ exports.inserirPeso = async (req, res) => {
 
         // Insere
         db.query(
-          'INSERT INTO Pesagem_Remota (PESAGEMID, ORDEM_PRODUCAO) VALUES (?, ?)',
+          'INSERT INTO Pesagem_Remota (ORDEM_PRODUCAO) VALUES (?, ?)',
           [pesagemID, op],
           function (err) {
             db.detach();
@@ -2314,8 +2314,8 @@ exports.inserirPeso = async (req, res) => {
               return;
             }
 
-            console.log('Peso inserido - PesagemID: ' + pesagemID + ' OP: ' + op + ' Valor: ' + valor);
-            res.status(201).send("Peso inserido com sucesso!");
+            console.log('Peso inserido -   OP: ' + op);
+            res.status(201).send("Peso inserido com sucesso!" +" OP: " + op);
           }
         );
       }
