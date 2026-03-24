@@ -2303,7 +2303,7 @@ exports.inserirPeso = async (req, res) => {
 
         // Insere
         db.query(
-          'INSERT INTO Pesagem_Remota (ORDEM_PRODUCAO) VALUES (?, ?)',
+          'INSERT INTO Pesagem_Remota (ORDEM_PRODUCAO) VALUES (?)',
           [pesagemID, op],
           function (err) {
             db.detach();
@@ -2315,7 +2315,7 @@ exports.inserirPeso = async (req, res) => {
             }
 
             console.log('Peso inserido -   OP: ' + op);
-            res.status(201).send("Peso inserido com sucesso!" +" OP: " + op);
+            res.status(201).send("Peso inserido com sucesso!" + " OP: " + op);
           }
         );
       }
