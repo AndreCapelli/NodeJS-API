@@ -2323,3 +2323,50 @@ exports.inserirPeso = async (req, res) => {
   });
 
 };
+
+exports.listarPesagens = async (req, res) => {
+
+  const dataInicio = req.params.dataInicio;
+  const dataFim = req.params.dataFim;
+  const pendentes = req.params.pendentes; // 1 = só pendentes, 0 = todas
+
+  if (!dataInicio || !dataFim) {
+    res.status(400).send("Parâmetros dataInicio e dataFim são obrigatórios! Formato: YYYY-MM-DD");
+    return;
+  }
+
+  let sql = 'SELECT * FROM HISTORICOPESAGENS WHERE DATA >= ? AND DATA <= ?';
+
+  if (pendentes === '1') {
+    sql += ' AND (PESAGEM_IMPRESSA IS NULL OR PESAGEM_IMPRESSA = 0)';
+  }
+
+  sql += ' ORDER BY DATA, HORA';
+
+  Firebird.attach(fbOptions, function (err, db) {
+    if (err) {
+      console.error('Erro ao conectar Firebird:', err);
+      res.status(500).send("Erro ao conectar Firebird: " + err.message);
+      return;
+    }
+
+    db.query(sql, [dataInicio, dataFim], function (err, result) {
+      db.detach();
+
+      if (err) {
+        console.error('Erro ao consultar pesagens:', err);
+        res.status(500).send("Erro ao consultar: " + err.message);
+        return;
+      }
+
+      if (!result || result.length === 0) {
+        res.status(404).json({ success: false, message: "Nenhuma pesagem encontrada no período." });
+        return;
+      }
+
+      console.log('Pesagens encontradas: ' + result.length);
+      res.status(200).json({ success: true, total: result.length, pesagens: result });
+    });
+  });
+
+};

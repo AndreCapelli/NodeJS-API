@@ -16,6 +16,7 @@ module.exports = (app) => {
   router.get("/baixarArquivosTenda/", pessoa.baixarArquivosTenda);
 
   router.post("/toth/Pesar/", pessoa.inserirPeso);
+  router.get("/toth/Pesagens/:dataInicio&:dataFim&:pendentes", pessoa.listarPesagens);
 
 
   app.use("/portal", router);
