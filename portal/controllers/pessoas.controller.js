@@ -2304,7 +2304,7 @@ exports.inserirPeso = async (req, res) => {
         // Insere
         db.query(
           'INSERT INTO Pesagem_Remota (ORDEM_PRODUCAO) VALUES (?)',
-          [pesagemID, op],
+          [op],
           function (err) {
             db.detach();
 
