@@ -2326,16 +2326,31 @@ exports.inserirPeso = async (req, res) => {
 
 exports.listarPesagens = async (req, res) => {
 
-  const dataInicio = req.params.dataInicio;
-  const dataFim = req.params.dataFim;
-  const pendentes = req.params.pendentes; // 1 = só pendentes, 0 = todas
+  const dataInicio = req.params.dataInicio || '';
+  const dataFim = req.params.dataFim || '';
+  const pendentes = req.params.pendentes;
+  const ordemProducao = req.params.ordemProducao || '';
 
-  if (!dataInicio || !dataFim) {
-    res.status(400).send("Parâmetros dataInicio e dataFim são obrigatórios! Formato: YYYY-MM-DD");
+  const temData = dataInicio !== '' && dataFim !== '';
+  const temOP = ordemProducao !== '';
+
+  if (!temData && !temOP) {
+    res.status(400).send("Informe ao menos a data (dataInicio e dataFim) ou a ordem de produção!");
     return;
   }
 
-  let sql = 'SELECT * FROM HISTORICOPESAGENS WHERE DATA >= ? AND DATA <= ?';
+  let sql = 'SELECT * FROM HISTORICOPESAGENS WHERE 1=1';
+  let params = [];
+
+  if (temData) {
+    sql += ' AND DATA >= ? AND DATA <= ?';
+    params.push(dataInicio, dataFim);
+  }
+
+  if (temOP) {
+    sql += ' AND ORDEM_PRODUCAO = ?';
+    params.push(ordemProducao);
+  }
 
   if (pendentes === '1') {
     sql += ' AND (PESAGEM_IMPRESSA IS NULL OR PESAGEM_IMPRESSA = 0)';
@@ -2350,7 +2365,7 @@ exports.listarPesagens = async (req, res) => {
       return;
     }
 
-    db.query(sql, [dataInicio, dataFim], function (err, result) {
+    db.query(sql, params, function (err, result) {
       db.detach();
 
       if (err) {
@@ -2360,7 +2375,7 @@ exports.listarPesagens = async (req, res) => {
       }
 
       if (!result || result.length === 0) {
-        res.status(404).json({ success: false, message: "Nenhuma pesagem encontrada no período." });
+        res.status(404).json({ success: false, message: "Nenhuma pesagem encontrada." });
         return;
       }
 
