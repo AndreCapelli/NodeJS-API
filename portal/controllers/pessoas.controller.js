@@ -33,7 +33,27 @@ const sql = require('mssql');
 
 const calculos = require("../../funcoes_utils/calculos/calculos");
 const funcoes = require("../../funcoes_utils/funcoes/funcoes");
+const tendaService = require("../services/tenda.service");
 const { Sequelize } = require("../models/index");
+
+/**
+ * Gera um texto não ambíguo aceito pelas colunas datetime do SQL Server.
+ * A aplicação trabalha no fuso -03:00; por isso deslocamos o instante e usamos
+ * os componentes UTC para preservar o horário local recebido pela API.
+ * Exemplo: 2026-09-23T10:39:00-03:00 -> 20260923 10:39:00.000.
+ */
+function formatarDataSqlServer(data) {
+  const dataNoFusoAplicacao = new Date(data.getTime() - (3 * 60 * 60 * 1000));
+  const ano = dataNoFusoAplicacao.getUTCFullYear();
+  const mes = String(dataNoFusoAplicacao.getUTCMonth() + 1).padStart(2, '0');
+  const dia = String(dataNoFusoAplicacao.getUTCDate()).padStart(2, '0');
+  const hora = String(dataNoFusoAplicacao.getUTCHours()).padStart(2, '0');
+  const minuto = String(dataNoFusoAplicacao.getUTCMinutes()).padStart(2, '0');
+  const segundo = String(dataNoFusoAplicacao.getUTCSeconds()).padStart(2, '0');
+  const milissegundo = String(dataNoFusoAplicacao.getUTCMilliseconds()).padStart(3, '0');
+
+  return `${ano}${mes}${dia} ${hora}:${minuto}:${segundo}.${milissegundo}`;
+}
 
 /**
  * Exports. para sempre "exportar" o resultado do que acontecer
@@ -1903,21 +1923,37 @@ exports.johnTeste = async (req, res) => {
 
   res.send("oi").status(200);
 };
-
-
+/**
+ * Registra um lote de resumos de operação (R.O.).
+ *
+ * Fluxo geral:
+ * 1. Agrupa os registros por campanha, pois cada campanha possui suas próprias
+ *    tabelas Fone_List_XXXXXX e ContatosFichas_XXXXXX.
+ * 2. Valida operador, resumo, motivo e vínculo da pessoa com a campanha.
+ * 3. Insere os contatos válidos e atualiza o último R.O. da FoneList.
+ * 4. Para as campanhas 33 e 74, informa também a ocorrência no serviço da Tenda.
+ *
+ * Uma falha de validação afeta somente o registro inválido. Uma falha na Tenda
+ * não desfaz o contato já salvo: ela é informada em sucesso.integracaoTenda.
+ */
 exports.registrarResumo = async (req, res) => {
   try {
+    // Formato esperado: { registros: [{ campanhaId, pessoaId, resumoId, ... }] }.
     const { registros } = req.body;
 
     if (!Array.isArray(registros) || registros.length === 0) {
       return res.status(400).json({ mensagem: 'Array de registros não informado ou vazio.' });
     }
 
+    // Mantém a posição original de cada item para o cliente relacionar a resposta
+    // com o registro que enviou, mesmo após o agrupamento por campanha.
     const resultados = {
       sucessos: [],
       erros: []
     };
 
+    // O processamento precisa ser separado por campanha porque o nome das tabelas
+    // físicas muda de acordo com o código da campanha.
     const registrosPorCampanha = {};
 
     for (let i = 0; i < registros.length; i++) {
@@ -1940,7 +1976,27 @@ exports.registrarResumo = async (req, res) => {
       registrosPorCampanha[chave].push({ ...registro, indice: i });
     }
 
+    // Antes de iniciar o loop das campanhas, verifica se o lote possui algum
+    // registro das campanhas Tenda. Nesse caso, carrega credor, usuário, empresa
+    // e senha do webservice uma única vez e reutiliza a configuração no lote todo.
+    const possuiCampanhaTenda = Object.values(registrosPorCampanha).some(
+      registrosCampanha => [33, 74].includes(Number(registrosCampanha[0].campanhaId))
+    );
 
+    let configuracaoTenda;
+    let erroConfiguracaoTenda;
+
+    if (possuiCampanhaTenda) {
+      try {
+        configuracaoTenda = await tendaService.buscarConfiguracao(db.sequelize);
+      } catch (error) {
+        erroConfiguracaoTenda =
+          error.message || error.code || String(error) ||
+          "Não foi possível carregar a configuração da Tenda.";
+      }
+    }
+
+    // Processa cada campanha separadamente, mas produz uma única resposta ao final.
     for (const chaveCampanha in registrosPorCampanha) {
       const registrosCampanha = registrosPorCampanha[chaveCampanha];
       const primeiroRegistro = registrosCampanha[0];
@@ -1948,7 +2004,8 @@ exports.registrarResumo = async (req, res) => {
       let campanhaIdFinal = primeiroRegistro.campanhaId;
       let codigoCampanhaFinal = primeiroRegistro.codigoCampanha;
 
-      // Busca código da campanha se necessário
+      // O cliente pode enviar campanhaId, codigoCampanha ou ambos. O código é
+      // necessário para montar os nomes das tabelas específicas da campanha.
       if (campanhaIdFinal && !codigoCampanhaFinal) {
         const [result] = await db.sequelize.query(
           `SELECT CaCodigo FROM Campanhas WHERE Campanhas_ID = :campanhaId`,
@@ -1972,16 +2029,28 @@ exports.registrarResumo = async (req, res) => {
         codigoCampanhaFinal = result.CaCodigo;
       }
 
-      const tabelaFoneList = `Fone_List_${codigoCampanhaFinal.padStart(6, '0')}`;
-      const tabelaContatosFichas = `ContatosFichas_${codigoCampanhaFinal.padStart(6, '0')}`;
+      codigoCampanhaFinal = String(codigoCampanhaFinal);
 
-      // Valida IDs únicos em lote
+      // Exemplo: código 33 gera Fone_List_000033 e ContatosFichas_000033.
+      const codigoCampanhaFormatado = codigoCampanhaFinal.padStart(6, '0');
+      const tabelaFoneList = `Fone_List_${codigoCampanhaFormatado}`;
+      const tabelaContatosFichas = `ContatosFichas_${codigoCampanhaFormatado}`;
+      // Regra trazida do legado: somente os IDs 33 e 74 informam ocorrência
+      // à Tenda. Não é consultada a antiga flag Param_UtilizaIntegracaoTenda.
+      const integraTenda = [33, 74].includes(Number(campanhaIdFinal));
+
+      // Remove IDs repetidos para consultar cada tabela de validação uma única vez.
       const operadoresIds = [...new Set(registrosCampanha.map(r => r.operadorId).filter(Boolean))];
       const resumosIds = [...new Set(registrosCampanha.map(r => r.resumoId).filter(Boolean))];
       const motivosIds = [...new Set(registrosCampanha.map(r => r.motivoId).filter(Boolean))];
-      const pessoasIds = [...new Set(registrosCampanha.map(r => r.pessoaId).filter(r => r && !r.fonelistId))];
+      const pessoasIds = [...new Set(
+        registrosCampanha
+          .filter(r => r.pessoaId && !r.fonelistId)
+          .map(r => r.pessoaId)
+      )];
 
-      // Valida operadores
+      // Marca o registro como inválido quando o operador não existe. O registro
+      // marcado será removido antes do INSERT, sem impedir os demais do lote.
       if (operadoresIds.length > 0) {
         const operadoresValidos = await db.sequelize.query(
           `SELECT Usuarios_ID FROM Usuarios WHERE Usuarios_ID IN (:ids)`,
@@ -1999,7 +2068,7 @@ exports.registrarResumo = async (req, res) => {
         });
       }
 
-      // Valida resumos
+      // Confirma se cada R.O. recebido existe em ResumoDeOperacoes.
       if (resumosIds.length > 0) {
         const resumosValidos = await db.sequelize.query(
           `SELECT ResumoDeOperacoes_ID FROM ResumoDeOperacoes WHERE ResumoDeOperacoes_ID IN (:ids)`,
@@ -2017,7 +2086,7 @@ exports.registrarResumo = async (req, res) => {
         });
       }
 
-      // Valida motivos
+      // O motivo é opcional, mas, quando informado, precisa existir.
       if (motivosIds.length > 0) {
         const motivosValidos = await db.sequelize.query(
           `SELECT Motivos_ID FROM Motivos WHERE Motivos_ID IN (:ids)`,
@@ -2035,10 +2104,11 @@ exports.registrarResumo = async (req, res) => {
         });
       }
 
-      // Busca fonelistIds para pessoasIds
+      // ContatosFichas grava CoFoneListsID. Quando o cliente envia somente
+      // pessoaId, localiza o ID correspondente na FoneList desta campanha.
       if (pessoasIds.length > 0) {
         const fonelistsPorPessoa = await db.sequelize.query(
-          `SELECT FN_PessoasID, FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID AS id
+          `SELECT FN_PessoasID, FN_FoneList_${codigoCampanhaFormatado}_ID AS id
            FROM ${tabelaFoneList}
            WHERE FN_PessoasID IN (:ids)`,
           {
@@ -2063,7 +2133,70 @@ exports.registrarResumo = async (req, res) => {
         });
       }
 
-      // Prepara inserts em lote
+      // A Tenda identifica o cliente pelo REGIS, que no MaxOne corresponde a
+      // Pessoas.PesCodigoIntegracao. Se recebemos somente fonelistId, o caminho é:
+      // fonelistId -> FN_PessoasID -> PesCodigoIntegracao.
+      if (integraTenda) {
+        const fonelistIdsSemPessoa = [...new Set(
+          registrosCampanha
+            .filter(reg => !reg.pessoaId && reg.fonelistId)
+            .map(reg => reg.fonelistId)
+        )];
+
+        // Mapa usado para relacionar rapidamente cada FoneList à sua pessoa.
+        const pessoasPorFonelist = new Map();
+
+        if (fonelistIdsSemPessoa.length > 0) {
+          const fonelists = await db.sequelize.query(
+            `SELECT FN_FoneList_${codigoCampanhaFormatado}_ID AS id, FN_PessoasID
+             FROM ${tabelaFoneList}
+             WHERE FN_FoneList_${codigoCampanhaFormatado}_ID IN (:ids)`,
+            {
+              replacements: { ids: fonelistIdsSemPessoa },
+              type: db.Sequelize.QueryTypes.SELECT
+            }
+          );
+
+          fonelists.forEach(fonelist => {
+            pessoasPorFonelist.set(String(fonelist.id), fonelist.FN_PessoasID);
+          });
+        }
+
+        registrosCampanha.forEach(reg => {
+          reg._pessoaIdTenda = reg.pessoaId || pessoasPorFonelist.get(String(reg.fonelistId));
+        });
+
+        const pessoasIdsTenda = [...new Set(
+          registrosCampanha.map(reg => reg._pessoaIdTenda).filter(Boolean)
+        )];
+
+        if (pessoasIdsTenda.length > 0) {
+          const pessoasTenda = await db.sequelize.query(
+            `SELECT Pessoas_ID, PesCodigoIntegracao
+             FROM Pessoas WITH (NOLOCK)
+             WHERE Pessoas_ID IN (:ids)`,
+            {
+              replacements: { ids: pessoasIdsTenda },
+              type: db.Sequelize.QueryTypes.SELECT
+            }
+          );
+
+          // Guarda o REGIS por pessoa para anexá-lo ao registro que será inserido.
+          const codigosPorPessoa = new Map(
+            pessoasTenda.map(pessoa => [
+              String(pessoa.Pessoas_ID),
+              pessoa.PesCodigoIntegracao
+            ])
+          );
+
+          registrosCampanha.forEach(reg => {
+            reg._codigoIntegracaoTenda = codigosPorPessoa.get(String(reg._pessoaIdTenda));
+          });
+        }
+      }
+
+      // Transfere para resultados.erros tudo o que falhou nas validações e mantém
+      // em registrosValidos somente os itens que podem ser gravados.
       const registrosValidos = registrosCampanha.filter(reg => {
         if (reg._erroValidacao) {
           resultados.erros.push({
@@ -2083,18 +2216,47 @@ exports.registrarResumo = async (req, res) => {
           return false;
         }
 
+        // Converte as datas ISO recebidas pela API para Date antes de enviá-las
+        // ao Sequelize/SQL Server. Enviar diretamente uma string com fuso, como
+        // "2026-09-23T10:40:00-03:00", pode causar erro de conversão no SQL Server.
+        const agora = new Date();
+        reg._dataHoraNormalizada = reg.dataHora ? new Date(reg.dataHora) : agora;
+        reg._dataInicioNormalizada = reg.dataInicio ? new Date(reg.dataInicio) : agora;
+        reg._dataFimNormalizada = reg.dataFim ? new Date(reg.dataFim) : agora;
+
+        const possuiDataInvalida = [
+          reg._dataHoraNormalizada,
+          reg._dataInicioNormalizada,
+          reg._dataFimNormalizada
+        ].some(data => Number.isNaN(data.getTime()));
+
+        if (possuiDataInvalida) {
+          resultados.erros.push({
+            indice: reg.indice,
+            registro: reg,
+            erro: 'Data inválida. Verifique dataHora, dataInicio e dataFim.'
+          });
+          return false;
+        }
+
         return true;
       });
 
       if (registrosValidos.length === 0) continue;
 
-      // Insere em lote
+      // Prepara os valores do INSERT. Campos iniciados por "_" são metadados de
+      // controle usados depois e não são enviados como colunas ao SQL Server.
       const valoresInsert = registrosValidos.map(reg => {
-        const dataHoraFinal = reg.dataHora || new Date();
+        // Mesmo após validar como Date, removemos o offset antes do SQL. Colunas
+        // datetime não aceitam textos como "2026-09-23T10:39:00-03:00".
+        const dataHoraFinal = formatarDataSqlServer(reg._dataHoraNormalizada);
         const criterioOrigem = reg.origem || 'API - MaxSmart';
-        const dataInicioFinal = reg.dataInicio || new Date();
-        const dataFimFinal = reg.dataFim || new Date();
-        const duracaoFicha = Math.abs(new Date(dataFimFinal) - new Date(dataInicioFinal)) / 60000;
+        const dataInicioFinal = formatarDataSqlServer(reg._dataInicioNormalizada);
+        const dataFimFinal = formatarDataSqlServer(reg._dataFimNormalizada);
+        // A duração é armazenada em minutos, como no comportamento anterior.
+        const duracaoFicha = Math.abs(
+          reg._dataFimNormalizada - reg._dataInicioNormalizada
+        ) / 60000;
 
         return {
           CoFoneListsID: reg.fonelistId,
@@ -2112,11 +2274,16 @@ exports.registrarResumo = async (req, res) => {
           CoHistoricoFicha: reg.historico,
           _dataHoraFinal: dataHoraFinal,
           _indice: reg.indice,
-          _resumoId: reg.resumoId
+          _resumoId: reg.resumoId,
+          _motivoId: reg.motivoId,
+          _historico: reg.historico,
+          _codigoIntegracaoTenda: reg._codigoIntegracaoTenda
         };
       });
 
-      // Insert múltiplo
+      // Cria um único INSERT com várias linhas para reduzir viagens ao banco.
+      // Os sufixos numéricos (:CoFoneListsID0, :CoFoneListsID1...) evitam colisão
+      // entre os parâmetros dos diferentes registros.
       const placeholders = valoresInsert.map((_, i) =>
         `(:CoFoneListsID${i}, :CoDataInicioFicha${i}, :CoDataFimFicha${i}, :CoDuracaoFicha${i},
          :CoUsuariosID${i}, :CoResumoOperacaoID${i}, :CoProtocolo${i}, :CoConseguiuContato${i},
@@ -2126,12 +2293,15 @@ exports.registrarResumo = async (req, res) => {
       const replacements = {};
       valoresInsert.forEach((val, i) => {
         Object.keys(val).forEach(key => {
+          // Metadados internos não correspondem a colunas da tabela.
           if (!key.startsWith('_')) {
             replacements[`${key}${i}`] = val[key];
           }
         });
       });
 
+      // OUTPUT devolve o ID criado para cada contato; ele será retornado ao cliente
+      // e também usado para marcar CoInformouRecupera após sucesso na Tenda.
       const [resultadosInsert] = await db.sequelize.query(
         `INSERT INTO ${tabelaContatosFichas} 
           (CoFoneListsID, CoDataInicioFicha, CoDataTerminoFicha, CoDuracaoFicha,
@@ -2145,13 +2315,14 @@ exports.registrarResumo = async (req, res) => {
         }
       );
 
-      // Update em lote do FoneList
+      // Atualiza a situação corrente da pessoa na campanha. As atualizações são
+      // independentes e executadas em paralelo após o INSERT dos contatos.
       const updatesPromises = valoresInsert.map((val, i) => {
         return db.sequelize.query(
           `UPDATE ${tabelaFoneList}
            SET FN_UltimoROID = :resumoId,
                FN_DataUltimoContato = :dataHora
-           WHERE FN_FoneList_${codigoCampanhaFinal.padStart(6, '0')}_ID = :fonelistId`,
+           WHERE FN_FoneList_${codigoCampanhaFormatado}_ID = :fonelistId`,
           {
             replacements: {
               resumoId: val._resumoId,
@@ -2165,15 +2336,128 @@ exports.registrarResumo = async (req, res) => {
 
       await Promise.all(updatesPromises);
 
-      // Adiciona sucessos
+      // Preserva a relação posicional entre valoresInsert e resultadosInsert.
+      const sucessosCampanha = [];
       resultadosInsert.forEach((result, i) => {
-        resultados.sucessos.push({
+        const sucesso = {
           indice: valoresInsert[i]._indice,
           contatoFichaId: result[`${tabelaContatosFichas}_ID`]
-        });
+        };
+
+        sucessosCampanha.push(sucesso);
+        resultados.sucessos.push(sucesso);
       });
+
+      // A integração acontece somente depois de o contato estar salvo no MaxOne.
+      // Assim, indisponibilidade da Tenda não provoca perda do atendimento local.
+      if (integraTenda) {
+        // Se a leitura feita antes do loop falhou, todos os contatos Tenda recebem
+        // o mesmo diagnóstico sem repetir a consulta de configuração.
+        if (erroConfiguracaoTenda) {
+          sucessosCampanha.forEach(sucesso => {
+            sucesso.integracaoTenda = {
+              informada: false,
+              erro: erroConfiguracaoTenda
+            };
+          });
+        }
+
+        if (configuracaoTenda) {
+          // Registros com o mesmo R.O./motivo compartilham o mesmo mapeamento.
+          // O cache evita repetir a consulta em TendaMapeamentoROs.
+          const cacheMapeamentos = new Map();
+
+          for (let i = 0; i < valoresInsert.length; i++) {
+            const valor = valoresInsert[i];
+            const sucesso = sucessosCampanha[i];
+
+            try {
+              // Sem PesCodigoIntegracao não existe REGIS para identificar o cliente
+              // no serviço externo. O contato local permanece gravado.
+              if (!valor._codigoIntegracaoTenda) {
+                throw new Error("Pessoa sem código de integração (REGIS) para a Tenda.");
+              }
+
+              const chaveMapeamento = `${valor._resumoId}:${Number(valor._motivoId) || 0}`;
+
+              if (!cacheMapeamentos.has(chaveMapeamento)) {
+                cacheMapeamentos.set(
+                  chaveMapeamento,
+                  await tendaService.mapearOcorrencia(
+                    db.sequelize,
+                    valor._resumoId,
+                    valor._motivoId
+                  )
+                );
+              }
+
+              const mapeamento = cacheMapeamentos.get(chaveMapeamento);
+
+              // O código externo é obrigatório. O mapeamento pode ser específico
+              // para o motivo ou o mapeamento padrão do R.O. (motivo nulo).
+              if (!mapeamento.codigo) {
+                throw new Error("Mapeamento de ocorrência da Tenda não encontrado.");
+              }
+
+              // Reproduz o legado: "motivo Tenda - quebra de linha + histórico".
+              const complemento =
+                `${mapeamento.motivo ? `${mapeamento.motivo} - \r\n` : ""}` +
+                `${valor._historico || ""}`;
+
+              const retornoTenda = await tendaService.incluirOcorrencia({
+                configuracao: configuracaoTenda,
+                codigo: mapeamento.codigo,
+                regis: valor._codigoIntegracaoTenda,
+                complemento,
+                dataAgenda: new Date()
+              });
+
+              // Código 00 é a confirmação de sucesso definida pelo webservice.
+              sucesso.integracaoTenda = {
+                informada: retornoTenda.codigo === "00",
+                codigo: retornoTenda.codigo || null,
+                mensagem: retornoTenda.mensagem || null
+              };
+
+              // Só marca CoInformouRecupera quando a ocorrência foi efetivamente
+              // aceita. Isso permite identificar contatos pendentes de reenvio.
+              if (retornoTenda.codigo === "00") {
+                try {
+                  await db.sequelize.query(
+                    `UPDATE ${tabelaContatosFichas}
+                     SET CoInformouRecupera = 1
+                     WHERE ${tabelaContatosFichas}_ID = :contatoFichaId`,
+                    {
+                      replacements: { contatoFichaId: sucesso.contatoFichaId },
+                      type: db.Sequelize.QueryTypes.UPDATE
+                    }
+                  );
+
+                  sucesso.integracaoTenda.registroAtualizado = true;
+                } catch (error) {
+                  sucesso.integracaoTenda.registroAtualizado = false;
+                  sucesso.integracaoTenda.erroAtualizacao = error.message;
+                  console.error(
+                    "Ocorrência informada à Tenda, mas não foi possível atualizar CoInformouRecupera:",
+                    error.message
+                  );
+                }
+              }
+            } catch (error) {
+              // Não lança o erro para o catch geral: o registro no MaxOne já foi
+              // concluído e a falha externa deve aparecer apenas neste item.
+              sucesso.integracaoTenda = {
+                informada: false,
+                erro: error.message
+              };
+              console.error("Erro ao informar ocorrência à Tenda:", error.message);
+            }
+          }
+        }
+      }
     }
 
+    // Retorna contagens gerais e detalhes item a item, incluindo a integração Tenda.
     return res.status(201).json({
       mensagem: 'Processamento em lote concluído.',
       total: registros.length,
