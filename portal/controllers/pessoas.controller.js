@@ -397,29 +397,26 @@ exports.buscaDevedor = async (req, res) => {
 }
 
 exports.atualizaEmail = async (req, res) => {
-  var cpf = req.body.cpf;
-  var email = req.body.email;
-  var telefone = req.body.telefone;
-  var contato = req.body.contato;
-  var DDD;
-
-  console.log(req.body.cpf);
+  const cpf = req.body.cpf ? String(req.body.cpf) : "";
+  const email = req.body.email || null;
+  let telefone = req.body.telefone ? String(req.body.telefone) : "";
+  let contato = req.body.contato;
+  let DDD = null;
 
   if (!cpf) {
-    res
+    return res
       .status(406)
       .json({ message: "Documento da pessoa nao pode ser vazio!" });
-    return;
   }
 
   if (!email && !telefone) {
-    res.status(406).json({ message: "Email e telefone nao informados!" });
-    return;
+    return res.status(406).json({ message: "Email e telefone nao informados!" });
   }
 
-  if (telefone.length > 11 || telefone.length < 8) {
-    res.status(406).json({ message: "Telefone de tamanho invalido!" });
-    return;
+  // O telefone é opcional quando um e-mail é informado. Se vier preenchido,
+  // aceita de 8 a 11 dígitos e separa o DDD nos números de 10 ou 11 dígitos.
+  if (telefone && (telefone.length > 11 || telefone.length < 8)) {
+    return res.status(406).json({ message: "Telefone de tamanho invalido!" });
   }
 
   if (telefone.length === 11 || telefone.length === 10) {
@@ -427,71 +424,69 @@ exports.atualizaEmail = async (req, res) => {
     telefone = telefone.substring(2, 50);
   }
 
-  var pessoa = await Pessoas.findAll({
-    where: {
-      [Op.or]: [{ JPesCNPJ: cpf }, { FPesCPF: cpf }],
-    },
-  })
-    .then((data) => {
-      if (data.length === 0) {
-        return res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
-      } else {
-        if (!contato) {
-          contato =
-            data[0].FPesNome === null
-              ? data[0].JPesRazaoSocial
-              : data[0].FPesNome;
-        }
-        return data[0];
-      }
-    })
-    .catch((err) => {
-      res.status(500).json({
-        message: err.message + " Pessoa não localizada!",
-      });
+  try {
+    // Usa findOne porque a rotina trabalha apenas com a primeira pessoa encontrada.
+    const pessoa = await Pessoas.findOne({
+      where: {
+        [Op.or]: [{ JPesCNPJ: cpf }, { FPesCPF: cpf }],
+      },
     });
 
-  async function insereContato() {
-    await sequelize
-      .query(
-        `INSERT INTO PessoasContatos (PesPessoasID, PesDDD, PesTelefone, PesEmail, PesOrigemContato, PesContato) 
-        Values (${pessoa.Pessoas_ID},'${DDD}', '${telefone}','${email}','Portal','${contato}') `,
+    if (!pessoa) {
+      return res.status(406).send({ message: "Nenhuma Pessoa encontrada!" });
+    }
+
+    if (!contato) {
+      contato = pessoa.FPesNome || pessoa.JPesRazaoSocial;
+    }
+
+    // Parâmetros nomeados evitam quebra do SQL e injeção quando os valores
+    // contêm aspas ou outros caracteres especiais.
+    await sequelize.query(
+      `INSERT INTO PessoasContatos
+        (PesPessoasID, PesDDD, PesTelefone, PesEmail, PesOrigemContato, PesContato)
+       VALUES
+        (:pessoaId, :ddd, :telefone, :email, 'Portal', :contato)`,
+      {
+        replacements: {
+          pessoaId: pessoa.Pessoas_ID,
+          ddd: DDD,
+          telefone: telefone || null,
+          email,
+          contato: contato || null,
+        },
+        type: QueryTypes.INSERT,
+      }
+    );
+
+    // O log é secundário: se ele falhar, o contato já inserido continua válido.
+    // O erro é registrado no PM2, mas não causa uma segunda resposta HTTP.
+    try {
+      await sequelize.query(
+        `INSERT INTO LogsPortalCobrancas
+          (LoCPF, LoAcao, LoData, LoPessoasID)
+         VALUES
+          (:cpf, :acao, GETDATE(), :pessoaId)`,
         {
+          replacements: {
+            cpf,
+            acao: `ATUALIZOU TELEFONE/ EMAIL ${DDD || ""} ${telefone || ""} ${email || ""}`.trim(),
+            pessoaId: pessoa.Pessoas_ID,
+          },
           type: QueryTypes.INSERT,
         }
-      )
-      .catch((err) => {
-        res.status(500).json({
-          message: err.message + " Pessoa não localizada!",
-        });
-      });
-    return;
-  }
+      );
+    } catch (error) {
+      console.error("Erro ao registrar log da atualização de contato:", error.message);
+    }
 
-  await insereContato();
-
-  await sequelize
-    .query(
-      "INSERT INTO LogsPortalCobrancas (LoCPF, LoAcao, LoData, LoPessoasID) " +
-      "Values('" +
-      req.params.Documento +
-      "','ATUALIZOU TELEFONE/ EMAIL" +
-      DDD +
-      " " +
-      telefone +
-      " " +
-      email +
-      "', GetDate()," +
-      pessoa.Pessoas_ID +
-      ")",
-      { type: QueryTypes.INSERT }
-    )
-    .catch((err) => {
-      console.log("Erro: " + err.message);
+    return res.status(200).send("Contato inserido com sucesso");
+  } catch (error) {
+    console.error("Erro ao atualizar contato:", error.message);
+    return res.status(500).json({
+      message: `${error.message} Não foi possível atualizar o contato.`,
     });
-
-  res.status(200).send("Contato insereido com sucesso");
-  return;
+  }
 };
 
 exports.findOne = async (req, res) => {
