@@ -71,10 +71,10 @@ exports.retornaCalltechOficial = async (req, res) => {
       Usuario: "sa",
       Senha: "vbu'eoA A63",
       Base: "Calltech_Oficial",
-      Host: "calltech.xyz",
-      SenhaFTP: "k&4-1=B,",
-      UsuarioFTP: "u453044404.calltechnet.com.br",
-      CaminhoFTP: "calltechnet.com.br/Atualizador"
+      Host: "147.93.38.1",
+      SenhaFTP: "k&4-@vBWFv0,",
+      UsuarioFTP: "u942651173",
+      CaminhoFTP: "/Atualizador"
     };
 
     res.status(200).json(dados);
